@@ -1,0 +1,144 @@
+<!-- templates/planner/calendar.html -->
+{% extends 'base.html' %}
+
+{% block title %}Lịch Biểu Học Tập - AI Planner{% endblock %}
+
+{% block content %}
+<div class="space-y-4 sm:space-y-6">
+    <!-- Header + Nút lập lịch -->
+    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h1 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                <span>Thời Khóa Biểu & Kế Hoạch</span>
+                <span class="text-xs bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full font-semibold">Tự động</span>
+            </h1>
+            <p class="text-xs sm:text-sm text-gray-500 mt-0.5">Kéo thả hoặc chạm vào ô sự kiện để xem chi tiết</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <!-- Chú thích bằng FontAwesome -->
+            <div class="hidden lg:flex items-center gap-4 text-xs font-medium text-gray-600 bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
+                <span class="flex items-center gap-1.5">
+                    <i class="fa-solid fa-clock text-red-500"></i> Hạn chót
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <i class="fa-solid fa-book-open text-blue-500"></i> Tự học
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <i class="fa-solid fa-lock text-slate-500"></i> Cố định
+                </span>
+            </div>
+
+            <!-- Nút tự động lập lịch -->
+            <a href="{% url 'trigger_auto_schedule' %}" class="w-full sm:w-auto text-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl shadow-md transition duration-200 flex items-center gap-2 text-sm">
+                <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                <span>Tự động lập lịch tuần</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Khung Calendar -->
+    <div class="bg-white p-3 sm:p-6 rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div id="calendar" class="min-h-[550px] sm:min-h-[700px]"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const isMobile = window.innerWidth < 768;
+        const calendarEl = document.getElementById('calendar');
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: isMobile ? 'timeGridDay' : 'timeGridWeek',
+            locale: 'vi',
+            firstDay: 1,
+            editable: true,
+            eventResizableFromStart: true,
+            headerToolbar: isMobile ? {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'timeGridDay,dayGridMonth'
+            } : {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            buttonText: { today: 'Hôm nay', month: 'Tháng', week: 'Tuần', day: 'Ngày' },
+            slotMinTime: '06:00:00',
+            slotMaxTime: '24:00:00',
+            allDaySlot: false,
+            events: '/api/calendar-events/',
+
+            // Chèn trực tiếp icon FontAwesome vào thẻ sự kiện
+            eventContent: function(arg) {
+                const iconClass = arg.event.extendedProps.icon || 'fa-solid fa-calendar';
+                const container = document.createElement('div');
+                container.className = 'flex items-center gap-1.5 p-0.5 truncate text-white leading-tight';
+
+                const icon = document.createElement('i');
+                icon.className = `${iconClass} text-[11px] opacity-90`;
+
+                const title = document.createElement('span');
+                title.className = 'truncate font-medium text-xs';
+                title.innerText = arg.event.title;
+
+                container.appendChild(icon);
+                container.appendChild(title);
+                return { domNodes: [container] };
+            },
+
+            eventAllow: function(dropInfo, draggedEvent) {
+                return draggedEvent.extendedProps.type === 'block' && !draggedEvent.extendedProps.is_fixed;
+            },
+
+            eventDrop: function(info) { saveEventChange(info.event); },
+            eventResize: function(info) { saveEventChange(info.event); },
+
+            eventClick: function(info) {
+                alert('Sự kiện: ' + info.event.title + '\nThời gian: ' + info.event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+            }
+        });
+
+        calendar.render();
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth < 768 && calendar.view.type === 'timeGridWeek') {
+                calendar.changeView('timeGridDay');
+            } else if (window.innerWidth >= 768 && calendar.view.type === 'timeGridDay') {
+                calendar.changeView('timeGridWeek');
+            }
+        });
+
+        function saveEventChange(event) {
+            fetch('/api/update-block-time/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: event.id,
+                    start: event.start.toISOString(),
+                    end: event.end.toISOString()
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    alert('Lỗi cập nhật!');
+                    calendar.refetchEvents();
+                }
+            })
+            .catch(() => calendar.refetchEvents());
+        }
+    });
+</script>
+
+<style>
+    .fc { font-family: inherit; font-size: 0.85rem; }
+    .fc-theme-standard td, .fc-theme-standard th { border-color: #f1f5f9; }
+    .fc-col-header-cell { background-color: #f8fafc; padding: 6px 0; }
+    .fc-toolbar { flex-wrap: wrap; gap: 8px; }
+    .fc-toolbar-title { font-size: 1.1rem !important; }
+    .fc-button { padding: 4px 10px !important; font-size: 0.8rem !important; }
+    .fc-event { border-radius: 6px; padding: 2px 4px; border: none !important; }
+</style>
+{% endblock %}
