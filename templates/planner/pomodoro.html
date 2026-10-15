@@ -124,6 +124,7 @@
     </div>
 </div>
 
+<!-- Thay thế toàn bộ thẻ <script>...</script> trong templates/planner/pomodoro.html -->
 <script>
     let currentMode = 'pomodoro'; // pomodoro | short | long
     let totalSeconds = 25 * 60;
@@ -139,7 +140,7 @@
     const materialBox = document.getElementById('material-box');
     const materialLink = document.getElementById('material-link');
 
-    // Mở nhanh tài liệu ôn tập nếu task có URL
+    // Mở nhanh tài liệu nếu task có URL
     taskSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         const url = selectedOption.getAttribute('data-url');
@@ -149,38 +150,114 @@
         } else {
             materialBox.classList.add('hidden');
         }
+        if (isRunning) {
+            localStorage.setItem('pomo_task_id', this.value);
+        }
     });
 
-    function updateDisplay() {
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    function updateDisplay(seconds) {
+        const s = Math.max(0, seconds);
+        const minutes = Math.floor(s / 60);
+        const remSeconds = s % 60;
+        const formatted = `${String(minutes).padStart(2, '0')}:${String(remSeconds).padStart(2, '0')}`;
         timerDisplay.textContent = formatted;
-        document.title = `(${formatted}) ${currentMode === 'pomodoro' ? 'Tập trung' : 'Nghỉ ngơi'} - AI Planner`;
+        document.title = `(${formatted}) ${currentMode === 'pomodoro' ? 'Tập trung' : 'Giải lao'} - AI Planner`;
+    }
+
+    // 1. Phục hồi trạng thái khi tải trang từ localStorage
+    function restoreStateFromStorage() {
+        const state = localStorage.getItem('pomo_state');
+        if (!state) {
+            updateDisplay(totalSeconds);
+            return;
+        }
+
+        currentMode = localStorage.getItem('pomo_mode') || 'pomodoro';
+        initialMinutes = parseInt(localStorage.getItem('pomo_initial_minutes') || '25', 10);
+        
+        // Khôi phục bài tập đã chọn
+        const savedTaskId = localStorage.getItem('pomo_task_id');
+        if (savedTaskId) {
+            taskSelect.value = savedTaskId;
+            taskSelect.dispatchEvent(new Event('change'));
+        }
+
+        // Cập nhật giao diện tab chế độ
+        updateModeButtons(currentMode);
+
+        if (state === 'running') {
+            const endTime = parseInt(localStorage.getItem('pomo_end_time'), 10);
+            const now = Date.now();
+            const diffSeconds = Math.round((endTime - now) / 1000);
+
+            if (diffSeconds <= 0) {
+                // Đã hết giờ trong lúc người dùng ở trang khác
+                completeSession();
+            } else {
+                totalSeconds = diffSeconds;
+                startTimerInterval();
+            }
+        } else if (state === 'paused') {
+            totalSeconds = parseInt(localStorage.getItem('pomo_remaining_seconds') || totalSeconds, 10);
+            updateDisplay(totalSeconds);
+            btnText.textContent = "Tiếp tục";
+            btnIcon.className = "fa-solid fa-play";
+            timerStatus.textContent = "Đang tạm dừng";
+        }
+    }
+
+    function updateModeButtons(mode) {
+        ['pomodoro', 'short', 'long'].forEach(m => {
+            const btn = document.getElementById(`mode-${m}`);
+            if (btn) {
+                if (m === mode) {
+                    btn.className = "px-5 py-2 rounded-xl text-sm font-semibold transition shadow-sm bg-white text-gray-900";
+                } else {
+                    btn.className = "px-5 py-2 rounded-xl text-sm font-semibold transition text-gray-500 hover:text-gray-900";
+                }
+            }
+        });
     }
 
     function switchMode(mode, minutes) {
+        if (isRunning) {
+            if (!confirm('Bạn có chắc muốn chuyển chế độ? Phiên học hiện tại sẽ bị hủy.')) return;
+        }
         clearInterval(timerInterval);
         isRunning = false;
-        btnText.textContent = "Bắt đầu";
-        btnIcon.className = "fa-solid fa-play";
+        clearStorage();
 
         currentMode = mode;
         initialMinutes = minutes;
         totalSeconds = minutes * 60;
-        updateDisplay();
-
-        // Cập nhật tab active
-        ['pomodoro', 'short', 'long'].forEach(m => {
-            const btn = document.getElementById(`mode-${m}`);
-            if (m === mode) {
-                btn.className = "px-5 py-2 rounded-xl text-sm font-semibold transition shadow-sm bg-white text-gray-900";
-            } else {
-                btn.className = "px-5 py-2 rounded-xl text-sm font-semibold transition text-gray-500 hover:text-gray-900";
-            }
-        });
-
+        
+        btnText.textContent = "Bắt đầu";
+        btnIcon.className = "fa-solid fa-play";
+        updateModeButtons(mode);
+        updateDisplay(totalSeconds);
         timerStatus.textContent = mode === 'pomodoro' ? "Sẵn sàng tập trung" : "Thời gian giải lao";
+    }
+
+    function startTimerInterval() {
+        isRunning = true;
+        btnText.textContent = "Tạm dừng";
+        btnIcon.className = "fa-solid fa-pause";
+        timerStatus.textContent = currentMode === 'pomodoro' ? "Đang tập trung cao độ..." : "Đang nghỉ ngơi...";
+
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            const endTime = parseInt(localStorage.getItem('pomo_end_time'), 10);
+            const now = Date.now();
+            const remaining = Math.round((endTime - now) / 1000);
+
+            if (remaining > 0) {
+                totalSeconds = remaining;
+                updateDisplay(totalSeconds);
+            } else {
+                updateDisplay(0);
+                completeSession();
+            }
+        }, 1000);
     }
 
     function toggleTimer() {
@@ -191,35 +268,46 @@
             btnText.textContent = "Tiếp tục";
             btnIcon.className = "fa-solid fa-play";
             timerStatus.textContent = "Đang tạm dừng";
-        } else {
-            // Chạy đếm ngược
-            isRunning = true;
-            btnText.textContent = "Tạm dừng";
-            btnIcon.className = "fa-solid fa-pause";
-            timerStatus.textContent = currentMode === 'pomodoro' ? "Đang tập trung cao độ..." : "Đang nghỉ ngơi...";
 
-            timerInterval = setInterval(() => {
-                if (totalSeconds > 0) {
-                    totalSeconds--;
-                    updateDisplay();
-                } else {
-                    completeSession();
-                }
-            }, 1000);
+            localStorage.setItem('pomo_state', 'paused');
+            localStorage.setItem('pomo_remaining_seconds', totalSeconds);
+        } else {
+            // Bắt đầu hoặc Chạy tiếp
+            const targetEndTime = Date.now() + (totalSeconds * 1000);
+            localStorage.setItem('pomo_state', 'running');
+            localStorage.setItem('pomo_end_time', targetEndTime);
+            localStorage.setItem('pomo_mode', currentMode);
+            localStorage.setItem('pomo_initial_minutes', initialMinutes);
+            localStorage.setItem('pomo_task_id', taskSelect.value || '');
+
+            startTimerInterval();
         }
     }
 
     function resetTimer() {
+        if (isRunning) {
+            if (!confirm('Bạn có muốn hủy phiên này không? Phiên bỏ dở sẽ không được tính.')) return;
+        }
         clearInterval(timerInterval);
         isRunning = false;
+        clearStorage();
+
         btnText.textContent = "Bắt đầu";
         btnIcon.className = "fa-solid fa-play";
         totalSeconds = initialMinutes * 60;
-        updateDisplay();
+        updateDisplay(totalSeconds);
         timerStatus.textContent = "Đã đặt lại đồng hồ";
     }
 
-    // Âm thanh báo hiệu hoàn thành bằng Web Audio API
+    function clearStorage() {
+        localStorage.removeItem('pomo_state');
+        localStorage.removeItem('pomo_end_time');
+        localStorage.removeItem('pomo_remaining_seconds');
+        localStorage.removeItem('pomo_mode');
+        localStorage.removeItem('pomo_initial_minutes');
+        localStorage.removeItem('pomo_task_id');
+    }
+
     function playBeepSound() {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -228,7 +316,7 @@
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Nốt La (A5)
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
             gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
             osc.start();
             osc.stop(audioCtx.currentTime + 0.8);
@@ -242,21 +330,28 @@
         isRunning = false;
         playBeepSound();
 
-        if (currentMode === 'pomodoro') {
-            const taskId = taskSelect.value || null;
+        const taskId = localStorage.getItem('pomo_task_id') || taskSelect.value || null;
+        const duration = initialMinutes;
+        const wasPomodoro = (currentMode === 'pomodoro');
 
+        clearStorage();
+
+        if (wasPomodoro) {
             fetch('/api/save-pomodoro/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     task_id: taskId,
-                    duration_minutes: initialMinutes,
+                    duration_minutes: duration,
                     completed: true
                 })
             })
             .then(res => res.json())
-            .then(data => {
-                alert('Chúc mừng! Bạn đã hoàn thành trọn vẹn 1 phiên Pomodoro ' + initialMinutes + ' phút!');
+            .then(() => {
+                alert(`Xuất sắc! Bạn đã hoàn thành trọn vẹn 1 phiên Pomodoro ${duration} phút!`);
+                window.location.reload();
+            })
+            .catch(() => {
                 window.location.reload();
             });
         } else {
@@ -265,6 +360,7 @@
         }
     }
 
-    updateDisplay();
+    // Khởi chạy đồng bộ ngay khi load trang
+    restoreStateFromStorage();
 </script>
 {% endblock %}
