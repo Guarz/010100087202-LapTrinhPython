@@ -81,11 +81,8 @@
                 <a href="{% url 'calendar_view' %}" class="block px-3 py-2.5 rounded-xl text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition">
                     <i class="fa-regular fa-calendar-days w-6 text-center mr-1"></i> Lịch biểu
                 </a>
-                <a href="{% url 'pomodoro_view' %}" class="text-gray-700 hover:text-blue-600 font-medium text-sm transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-stopwatch text-red-500"></i>
-                    <span>Pomodoro</span>
-                    <!-- Huy hiệu nhảy giờ mini khi đang chạy ngầm -->
-                    <span id="nav-pomo-badge" class="hidden text-[11px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold animate-pulse"></span>
+                <a href="{% url 'pomodoro_view' %}" class="block px-3 py-2.5 rounded-xl text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition">
+                    <i class="fa-solid fa-stopwatch text-red-500 w-6 text-center mr-1"></i> Pomodoro
                 </a>
                 <a href="{% url 'ai_assistant_view' %}" class="block px-3 py-2.5 rounded-xl text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition">
                     <i class="fa-solid fa-brain text-purple-600 w-6 text-center mr-1"></i> Trợ lý AI
@@ -154,29 +151,6 @@
                 document.body.classList.remove('overflow-hidden');
             }
         });
-        function syncNavPomodoro() {
-        const badge = document.getElementById('nav-pomo-badge');
-        if (!badge) return;
-
-        setInterval(() => {
-            const state = localStorage.getItem('pomo_state');
-            if (state === 'running') {
-                const endTime = parseInt(localStorage.getItem('pomo_end_time'), 10);
-                const diff = Math.round((endTime - Date.now()) / 1000);
-                if (diff > 0) {
-                    const m = Math.floor(diff / 60);
-                    const s = diff % 60;
-                    badge.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-                    badge.classList.remove('hidden');
-                } else {
-                    badge.textContent = "Xong!";
-                }
-            } else {
-                badge.classList.add('hidden');
-            }
-        }, 1000);
-    }
-    syncNavPomodoro();
     </script>
 </body>
 </html>
