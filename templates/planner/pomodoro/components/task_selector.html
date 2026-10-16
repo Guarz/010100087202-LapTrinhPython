@@ -1,0 +1,296 @@
+
+<!-- =====================================================
+     POMODORO TASK SELECTOR V12
+     SINGLE ACTIVE TASK - MUTUAL LOCK
+
+     Scheduled Task hoặc Quick Goal
+     Không thể chọn cả hai cùng lúc
+     ===================================================== -->
+
+<div class="pm-task-setup">
+
+    <!-- 01. NGÀY HỌC -->
+    <div class="pm-task-date">
+
+        <div class="pm-task-date-title">
+            <i
+                class="fa-regular fa-calendar-days"
+                aria-hidden="true"
+            ></i>
+
+            <span>
+                Ngày học:
+                <strong id="pm-date-display">
+                    --/--/----
+                </strong>
+            </span>
+        </div>
+
+        <span class="pm-status-pill">
+            Hôm nay
+        </span>
+
+        <input
+            type="hidden"
+            id="pm-study-date"
+            name="study_date"
+        >
+
+    </div>
+
+
+    <!-- 02. NHIỆM VỤ ĐÃ LÊN LỊCH -->
+    <div
+        id="pm-scheduled-section"
+        class="pm-task-selection"
+    >
+
+        <label
+            for="pm-task-select"
+            class="pm-section-label"
+        >
+            <i
+                class="fa-solid fa-list-check"
+                aria-hidden="true"
+            ></i>
+            Nhiệm vụ đã lên lịch
+        </label>
+
+        <select
+            id="pm-task-select"
+            class="pm-input"
+        >
+            <option value="">
+                Chọn một nhiệm vụ
+            </option>
+        </select>
+
+        <!-- Hiển thị khi nhiệm vụ đã lên lịch được chọn -->
+        <div
+            id="pm-scheduled-active"
+            class="pm-scheduled-active"
+            hidden
+        >
+            <span class="pm-scheduled-active-status">
+                <i
+                    class="fa-solid fa-circle-check"
+                    aria-hidden="true"
+                ></i>
+                Đang được chọn
+            </span>
+
+            <button
+                type="button"
+                id="pm-clear-scheduled"
+                class="pm-clear-scheduled"
+                aria-label="Bỏ chọn nhiệm vụ đã lên lịch"
+            >
+                <i
+                    class="fa-solid fa-xmark"
+                    aria-hidden="true"
+                ></i>
+                Bỏ chọn
+            </button>
+        </div>
+
+        <p
+            id="pm-task-hint"
+            class="pm-helper"
+        >
+            Danh sách nhiệm vụ đã lên lịch.
+        </p>
+
+    </div>
+
+
+    <!-- 03. MỤC TIÊU PHÁT SINH -->
+    <section
+        id="pm-quick-section"
+        class="pm-task-add"
+        aria-label="Mục tiêu phát sinh"
+    >
+
+        <!-- Nút thêm mục tiêu -->
+        <button
+            type="button"
+            id="pm-show-add-task"
+            class="pm-outline-button"
+            aria-expanded="false"
+            aria-controls="pm-add-task-form"
+        >
+            <i
+                class="fa-solid fa-plus"
+                aria-hidden="true"
+            ></i>
+
+            Thêm nhiệm vụ
+        </button>
+
+        <!-- Thông báo khi đã chọn nhiệm vụ có sẵn -->
+        <p
+            id="pm-quick-lock-hint"
+            class="pm-task-lock-hint"
+            role="status"
+            hidden
+        >
+            <i
+                class="fa-solid fa-lock"
+                aria-hidden="true"
+            ></i>
+
+            Bỏ chọn nhiệm vụ đã lên lịch
+            để thêm mục tiêu phát sinh.
+        </p>
+
+
+        <!-- FORM THÊM MỤC TIÊU -->
+        <div
+            id="pm-add-task-form"
+            class="pm-task-form"
+            hidden
+        >
+
+            <label
+                for="pm-new-task"
+                class="pm-section-label"
+            >
+                Tên mục tiêu phát sinh
+            </label>
+
+            <input
+                type="text"
+                id="pm-new-task"
+                class="pm-input"
+                maxlength="150"
+                placeholder="VD: Ôn tập thuật toán Sobel"
+            >
+
+            <div class="pm-form-actions">
+
+                <button
+                    type="button"
+                    id="pm-cancel-task"
+                    class="pm-neutral-button"
+                >
+                    Hủy
+                </button>
+
+                <button
+                    type="button"
+                    id="pm-save-task"
+                    class="pm-primary-button"
+                >
+                    Thêm mục tiêu
+                </button>
+
+            </div>
+
+            <p class="pm-helper">
+                Mục tiêu chỉ dùng thử trên giao diện,
+                chưa lưu vào database.
+            </p>
+
+        </div>
+
+
+        <!-- MỤC TIÊU PHÁT SINH ĐÃ TẠO -->
+        <button
+            type="button"
+            id="pm-quick-goal"
+            class="pm-quick-goal"
+            aria-haspopup="dialog"
+            aria-controls="pm-goal-confirm-dialog"
+            hidden
+        >
+
+            <span class="pm-quick-goal-icon">
+                <i
+                    class="fa-solid fa-bolt"
+                    aria-hidden="true"
+                ></i>
+            </span>
+
+            <span class="pm-quick-goal-content">
+
+                <small>
+                    MỤC TIÊU PHÁT SINH
+                </small>
+
+                <strong
+                    id="pm-quick-goal-name"
+                ></strong>
+
+                <span id="pm-quick-goal-status">
+                    Đang được chọn
+                </span>
+
+            </span>
+
+            <i
+                class="fa-solid fa-pen"
+                aria-hidden="true"
+            ></i>
+
+        </button>
+
+    </section>
+
+</div>
+
+
+<!-- =====================================================
+     04. DIALOG XÁC NHẬN
+     Giữ lại chức năng hiện tại
+     ===================================================== -->
+
+<dialog
+    id="pm-goal-confirm-dialog"
+    class="pm-goal-dialog"
+    aria-labelledby="pm-goal-dialog-title"
+    aria-describedby="pm-goal-dialog-description"
+>
+
+    <div class="pm-goal-dialog-content">
+
+        <div class="pm-goal-dialog-icon">
+            <i
+                class="fa-solid fa-pen-to-square"
+                aria-hidden="true"
+            ></i>
+        </div>
+
+        <h3 id="pm-goal-dialog-title">
+            Thay đổi mục tiêu phát sinh?
+        </h3>
+
+        <p id="pm-goal-dialog-description">
+            Bạn đang chọn
+            <strong id="pm-dialog-goal-name"></strong>.
+            Nếu xác nhận, mục tiêu hiện tại
+            sẽ được bỏ để bạn có thể thêm
+            mục tiêu mới.
+        </p>
+
+        <div class="pm-goal-dialog-actions">
+
+            <button
+                type="button"
+                id="pm-keep-goal"
+                class="pm-goal-keep-btn"
+            >
+                Giữ mục tiêu hiện tại
+            </button>
+
+            <button
+                type="button"
+                id="pm-replace-goal"
+                class="pm-goal-replace-btn"
+            >
+                Xác nhận thay đổi
+            </button>
+
+        </div>
+
+    </div>
+
+</dialog>

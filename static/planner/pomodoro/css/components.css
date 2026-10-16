@@ -1,0 +1,1223 @@
+
+/* =====================================================
+   POMODORO WORKSPACE 2.0
+   COMPONENTS V12 - SINGLE ACTIVE TASK
+
+   Blue: #014BAA
+   Red:  #D21624
+
+   Giữ:
+   - Task Setup
+   - Single Quick Goal
+   - Confirmation Dialog
+   - Background Picker
+   - Music Picker
+   - Mini Player
+   - Expandable Dropdown
+   ===================================================== */
+
+
+/* =====================================================
+   1. GLOBAL COMPONENT STYLES
+   ===================================================== */
+
+#pomodoro-app [hidden] {
+    display: none !important;
+}
+
+#pomodoro-app button,
+#pomodoro-app input,
+#pomodoro-app select {
+    font-family: inherit;
+}
+
+#pomodoro-app button:focus-visible,
+#pomodoro-app input:focus-visible,
+#pomodoro-app select:focus-visible {
+    outline: 3px solid rgba(1, 75, 170, 0.25);
+    outline-offset: 2px;
+}
+
+#pomodoro-app button:disabled,
+#pomodoro-app select:disabled {
+    cursor: not-allowed;
+}
+
+#pomodoro-app .pm-section-label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 10px;
+    color: var(--pm-text-primary, #242A32);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+#pomodoro-app .pm-section-label i {
+    color: var(--pm-blue, #014BAA);
+}
+
+#pomodoro-app .pm-helper {
+    margin: 8px 0 0;
+    color: var(--pm-text-secondary, #626A73);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+#pomodoro-app .pm-input {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    padding: 11px 14px;
+    background: #FFFFFF;
+    border: 1px solid var(--pm-border, #DFDBD8);
+    border-radius: 11px;
+    color: var(--pm-text-primary, #242A32);
+    font-size: 14px;
+    transition:
+        border-color 150ms ease,
+        background 150ms ease,
+        box-shadow 150ms ease;
+}
+
+#pomodoro-app .pm-input:hover:not(:disabled) {
+    border-color: var(--pm-blue-t60, #99B7DD);
+}
+
+#pomodoro-app .pm-input:focus {
+    border-color: var(--pm-blue, #014BAA);
+    box-shadow: 0 0 0 3px rgba(1, 75, 170, .10);
+}
+
+
+/* =====================================================
+   2. SHARED BUTTONS
+   ===================================================== */
+
+#pomodoro-app .pm-primary-button,
+#pomodoro-app .pm-neutral-button,
+#pomodoro-app .pm-outline-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+    transition:
+        background 180ms ease,
+        border-color 180ms ease,
+        opacity 180ms ease,
+        transform 180ms ease;
+}
+
+#pomodoro-app .pm-primary-button {
+    background: var(--pm-blue, #014BAA);
+    color: #FFFFFF;
+}
+
+#pomodoro-app .pm-primary-button:hover:not(:disabled) {
+    background: var(--pm-blue-hover, #013C88);
+}
+
+#pomodoro-app .pm-neutral-button {
+    background: #FFFFFF;
+    border-color: var(--pm-border, #DFDBD8);
+    color: var(--pm-text-primary, #242A32);
+}
+
+#pomodoro-app .pm-neutral-button:hover:not(:disabled) {
+    background: var(--pm-cream-t30, #FAF7F5);
+}
+
+#pomodoro-app .pm-outline-button {
+    width: 100%;
+    background: transparent;
+    border-color: var(--pm-blue, #014BAA);
+    color: var(--pm-blue, #014BAA);
+}
+
+#pomodoro-app .pm-outline-button:hover:not(:disabled) {
+    background: var(--pm-blue-soft, #E6EDF7);
+}
+
+#pomodoro-app .pm-outline-button:disabled {
+    opacity: .48;
+    background: #F4F5F7;
+    border-color: #CBD1D9;
+    color: #77818E;
+}
+
+
+/* =====================================================
+   3. TASK SETUP
+   ===================================================== */
+
+#pomodoro-app .pm-task-setup {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    gap: 26px;
+}
+
+#pomodoro-app .pm-task-date {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+}
+
+#pomodoro-app .pm-task-date-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    color: var(--pm-text-primary, #242A32);
+    font-size: 13px;
+}
+
+#pomodoro-app .pm-task-date-title i {
+    color: var(--pm-blue, #014BAA);
+}
+
+#pomodoro-app .pm-task-date-title strong {
+    font-weight: 700;
+}
+
+#pomodoro-app .pm-status-pill {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 5px 11px;
+    background: var(--pm-blue-soft, #E6EDF7);
+    border-radius: 999px;
+    color: var(--pm-blue, #014BAA);
+    font-size: 11px;
+    font-weight: 650;
+}
+
+#pomodoro-app .pm-task-selection {
+    width: 100%;
+    min-width: 0;
+}
+
+#pomodoro-app .pm-task-add {
+    width: 100%;
+    min-width: 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--pm-border, #DFDBD8);
+}
+
+#pomodoro-app .pm-task-form {
+    margin-top: 14px;
+    padding: 16px;
+    background: #F6F9FD;
+    border: 1px solid #C8D9E9;
+    border-radius: 12px;
+}
+
+#pomodoro-app .pm-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 13px;
+}
+
+
+/* =====================================================
+   4. SCHEDULED TASK - SELECTED STATE
+   ===================================================== */
+
+/* Viền xanh khi chọn nhiệm vụ có sẵn */
+
+#pomodoro-app .pm-task-selection.is-selected .pm-input {
+    border-color: var(--pm-blue, #014BAA);
+    background: #F5F9FF;
+    box-shadow: 0 0 0 2px rgba(1, 75, 170, .05);
+}
+
+/* Hàng trạng thái và nút bỏ chọn */
+
+#pomodoro-app .pm-scheduled-active {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    animation: pm-task-fade-in 180ms ease;
+}
+
+#pomodoro-app .pm-scheduled-active-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--pm-blue, #014BAA);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+#pomodoro-app .pm-clear-scheduled {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 9px;
+    border: 1px solid var(--pm-blue-t80, #CCDBEE);
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: var(--pm-blue, #014BAA);
+    font-size: 11px;
+    font-weight: 650;
+    cursor: pointer;
+    transition:
+        background 150ms ease,
+        border-color 150ms ease;
+}
+
+#pomodoro-app .pm-clear-scheduled:hover {
+    background: var(--pm-blue-soft, #E6EDF7);
+    border-color: var(--pm-blue, #014BAA);
+}
+
+
+/* =====================================================
+   5. MUTUAL LOCK STATES
+   ===================================================== */
+
+/* Khóa danh sách Scheduled Task khi đang có Quick Goal */
+
+#pomodoro-app .pm-task-selection.is-locked .pm-input {
+    background: #F2F3F5;
+    border-color: #E0E2E6;
+    color: #87909B;
+    opacity: .75;
+}
+
+#pomodoro-app .pm-task-selection.is-locked > .pm-section-label {
+    opacity: .55;
+}
+
+#pomodoro-app .pm-task-selection.is-locked > .pm-helper {
+    color: #77818E;
+}
+
+/* Khóa thêm Quick Goal khi Scheduled Task được chọn */
+
+#pomodoro-app .pm-task-add.is-locked > .pm-outline-button {
+    opacity: .48;
+    background: #F4F5F7;
+    border-color: #CBD1D9;
+    color: #77818E;
+    cursor: not-allowed;
+}
+
+/* Hướng dẫn cách mở khóa */
+
+#pomodoro-app .pm-task-lock-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin: 9px 0 0;
+    color: #77818E;
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+#pomodoro-app .pm-task-lock-hint i {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+/* Khi mở khóa: trả giao diện về bình thường */
+
+#pomodoro-app .pm-task-selection,
+#pomodoro-app .pm-task-add {
+    transition: opacity 180ms ease;
+}
+
+
+/* =====================================================
+   6. SINGLE QUICK GOAL
+   ===================================================== */
+
+#pomodoro-app .pm-quick-goal {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    padding: 14px;
+    background: var(--pm-red-tint-90, #FBE8E9);
+    border: 1px solid var(--pm-red, #D21624);
+    border-radius: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        background 180ms ease,
+        box-shadow 180ms ease,
+        border-color 180ms ease;
+}
+
+#pomodoro-app .pm-quick-goal:hover {
+    background: var(--pm-red-tint-80, #F6D0D3);
+    box-shadow: 0 4px 14px rgba(210, 22, 36, .08);
+}
+
+#pomodoro-app .pm-quick-goal.is-active {
+    background: var(--pm-red-tint-90, #FBE8E9);
+    border-color: var(--pm-red, #D21624);
+}
+
+#pomodoro-app .pm-quick-goal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    background: var(--pm-red-tint-80, #F6D0D3);
+    color: var(--pm-red-shade-20, #A8121D);
+    border-radius: 10px;
+    font-size: 16px;
+}
+
+#pomodoro-app .pm-quick-goal-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 5px;
+}
+
+#pomodoro-app .pm-quick-goal-content small {
+    color: var(--pm-red-shade-30, #930F19);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: .6px;
+}
+
+#pomodoro-app .pm-quick-goal-content strong {
+    color: var(--pm-text-primary, #242A32);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+#pomodoro-app .pm-quick-goal-content span {
+    color: var(--pm-red-shade-30, #930F19);
+    font-size: 11px;
+}
+
+#pomodoro-app .pm-quick-goal > .fa-pen {
+    flex-shrink: 0;
+    color: var(--pm-red, #D21624);
+    font-size: 12px;
+}
+
+#pomodoro-app .pm-quick-goal:focus-visible {
+    outline: 3px solid rgba(210, 22, 36, .25);
+    outline-offset: 3px;
+}
+
+
+/* =====================================================
+   7. CONFIRMATION DIALOG
+   ===================================================== */
+
+#pomodoro-app .pm-goal-dialog {
+    position: fixed;
+    width: min(420px, calc(100vw - 32px));
+    max-width: 100%;
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    padding: 0;
+    overflow-y: auto;
+    background: #FFFFFF;
+    border: 1px solid var(--pm-red-tint-80, #F6D0D3);
+    border-radius: 20px;
+    color: var(--pm-text-primary, #242A32);
+    box-shadow: 0 24px 70px rgba(20, 30, 45, .22);
+}
+
+#pomodoro-app .pm-goal-dialog:not([open]) {
+    display: none;
+}
+
+#pomodoro-app .pm-goal-dialog::backdrop {
+    background: rgba(17, 27, 43, .48);
+    backdrop-filter: blur(4px);
+}
+
+#pomodoro-app .pm-goal-dialog-content {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    padding: 28px;
+    text-align: center;
+}
+
+#pomodoro-app .pm-goal-dialog-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 18px;
+    background: var(--pm-red-tint-90, #FBE8E9);
+    color: var(--pm-red, #D21624);
+    border-radius: 16px;
+    font-size: 20px;
+}
+
+#pomodoro-app .pm-goal-dialog h3 {
+    margin: 0;
+    color: var(--pm-text-primary, #242A32);
+    font-size: 19px;
+    font-weight: 750;
+    line-height: 1.4;
+    letter-spacing: -.02em;
+}
+
+#pomodoro-app .pm-goal-dialog p {
+    margin: 12px 0 24px;
+    color: var(--pm-text-secondary, #626A73);
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+#pomodoro-app .pm-goal-dialog p strong {
+    color: var(--pm-text-primary, #242A32);
+    font-weight: 700;
+}
+
+#pomodoro-app .pm-goal-dialog-actions {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+}
+
+#pomodoro-app .pm-goal-keep-btn,
+#pomodoro-app .pm-goal-replace-btn {
+    width: 100%;
+    min-height: 45px;
+    padding: 12px 16px;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background 150ms ease,
+        border-color 150ms ease;
+}
+
+#pomodoro-app .pm-goal-keep-btn {
+    background: var(--pm-red, #D21624);
+    border: 1px solid var(--pm-red, #D21624);
+    color: #FFFFFF;
+}
+
+#pomodoro-app .pm-goal-keep-btn:hover {
+    background: var(--pm-red-shade-10, #BD1420);
+    border-color: var(--pm-red-shade-10, #BD1420);
+}
+
+#pomodoro-app .pm-goal-replace-btn {
+    background: #FFFFFF;
+    border: 1px solid var(--pm-red, #D21624);
+    color: var(--pm-red, #D21624);
+}
+
+#pomodoro-app .pm-goal-replace-btn:hover {
+    background: var(--pm-red-tint-90, #FBE8E9);
+}
+
+#pomodoro-app .pm-goal-dialog button:focus-visible {
+    outline: 3px solid rgba(210, 22, 36, .25);
+    outline-offset: 3px;
+}
+
+
+/* =====================================================
+   8. ENVIRONMENT COMPONENTS
+   ===================================================== */
+
+#pomodoro-app .pm-section-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+#pomodoro-app .pm-section-top .pm-helper {
+    margin-top: 4px;
+}
+
+#pomodoro-app .pm-section-icon {
+    color: var(--pm-blue, #014BAA);
+}
+
+#pomodoro-app .pm-background-picker,
+#pomodoro-app .pm-music-picker {
+    position: static;
+    width: 100%;
+    min-width: 0;
+}
+
+#pomodoro-app .pm-picker-trigger {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    width: 100%;
+    min-width: 0;
+    padding: 11px;
+    background: #FFFFFF;
+    border: 1px solid var(--pm-border, #DFDBD8);
+    border-radius: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        background 150ms ease,
+        border-color 150ms ease;
+}
+
+#pomodoro-app .pm-picker-trigger:hover {
+    background: #FAFCFF;
+    border-color: var(--pm-blue, #014BAA);
+}
+
+#pomodoro-app .pm-picker-trigger[aria-expanded="true"] {
+    border-color: var(--pm-blue, #014BAA);
+}
+
+#pomodoro-app .pm-picker-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 5px;
+}
+
+#pomodoro-app .pm-picker-info strong {
+    color: var(--pm-text-primary, #242A32);
+    font-size: 13px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+#pomodoro-app .pm-picker-info small {
+    color: var(--pm-text-secondary, #626A73);
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
+#pomodoro-app .pm-chevron {
+    flex-shrink: 0;
+    color: var(--pm-blue, #014BAA);
+    transition: transform 200ms ease;
+}
+
+#pomodoro-app [aria-expanded="true"] .pm-chevron {
+    transform: rotate(180deg);
+}
+
+
+/* =====================================================
+   9. EXPANDABLE LIBRARIES
+   ===================================================== */
+
+#pomodoro-app .pm-dropdown-library,
+#pomodoro-app .pm-music-library {
+    position: static;
+    display: block;
+    inset: auto;
+    z-index: auto;
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+    margin-top: 10px;
+    padding: 12px;
+    overflow: visible;
+    background: #FFFDF9;
+    border: 1px solid var(--pm-border, #DFDBD8);
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+/* Giữ đúng trạng thái ẩn khi dropdown đóng */
+#pomodoro-app .pm-dropdown-library[hidden],
+#pomodoro-app .pm-music-library[hidden] {
+    display: none !important;
+}
+
+#pomodoro-app .pm-library-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+    font-size: 12px;
+}
+
+#pomodoro-app .pm-library-header span {
+    color: var(--pm-text-secondary, #626A73);
+}
+
+#pomodoro-app .pm-filter-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 15px;
+}
+
+#pomodoro-app .pm-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 10px;
+    background: #FFFFFF;
+    border: 1px solid var(--pm-border, #DFDBD8);
+    border-radius: 8px;
+    color: var(--pm-text-primary, #242A32);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#pomodoro-app .pm-filter-btn:hover {
+    background: var(--pm-blue-soft, #E6EDF7);
+}
+
+#pomodoro-app .pm-filter-btn.is-active {
+    background: var(--pm-blue, #014BAA);
+    border-color: var(--pm-blue, #014BAA);
+    color: #FFFFFF;
+}
+
+
+/* =====================================================
+   10. BACKGROUND GALLERY
+   ===================================================== */
+
+#pomodoro-app .pm-bg-selected-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 75px;
+    height: 53px;
+    border-radius: 8px;
+    color: #FFFFFF;
+    font-size: 20px;
+}
+
+#pomodoro-app .pm-background-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+    overflow: visible;
+}
+
+#pomodoro-app .pm-bg-item {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+#pomodoro-app .pm-bg-item-preview {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 5 / 3;
+    border: 2px solid transparent;
+    border-radius: 9px;
+    color: #FFFFFF;
+    font-size: 23px;
+    overflow: hidden;
+    transition:
+        border-color 150ms ease,
+        transform 150ms ease;
+}
+
+#pomodoro-app .pm-bg-item:hover .pm-bg-item-preview {
+    transform: translateY(-2px);
+}
+
+#pomodoro-app .pm-bg-item.is-selected .pm-bg-item-preview {
+    border-color: var(--pm-blue, #014BAA);
+}
+
+#pomodoro-app .pm-bg-item-name {
+    display: block;
+    margin-top: 6px;
+    color: var(--pm-text-primary, #242A32);
+    font-size: 12px;
+    font-weight: 650;
+}
+
+#pomodoro-app .pm-bg-item-type {
+    display: block;
+    margin-top: 3px;
+    color: var(--pm-text-secondary, #626A73);
+    font-size: 10px;
+}
+
+#pomodoro-app .pm-bg-item-preview .pm-media-type {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    padding: 3px 6px;
+    background: rgba(0, 0, 0, .46);
+    border-radius: 5px;
+    color: #FFFFFF;
+    font-size: 9px;
+}
+
+#pomodoro-app .pm-bg-sky {
+    background: linear-gradient(145deg, #A7DAF7, #1664B0);
+}
+
+#pomodoro-app .pm-bg-forest {
+    background: linear-gradient(145deg, #B5D1A3, #367D61);
+}
+
+#pomodoro-app .pm-bg-rain {
+    background: linear-gradient(145deg, #849BA9, #33465C);
+}
+
+#pomodoro-app .pm-bg-cozy {
+    background: linear-gradient(145deg, #E9C69A, #966A51);
+}
+
+#pomodoro-app .pm-bg-ocean {
+    background: linear-gradient(145deg, #8BD8D6, #1D6D9B);
+}
+
+#pomodoro-app .pm-bg-night {
+    background: linear-gradient(145deg, #5C6EAB, #251F54);
+}
+
+
+/* =====================================================
+   11. MUSIC LIBRARY
+   ===================================================== */
+
+#pomodoro-app .pm-music-cover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 51px;
+    height: 51px;
+    background: #557FA0;
+    border-radius: 9px;
+    color: #FFFFFF;
+}
+
+#pomodoro-app .pm-music-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+    overflow: visible;
+}
+
+#pomodoro-app .pm-music-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    padding: 9px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 150ms ease;
+}
+
+#pomodoro-app .pm-music-item:hover {
+    background: #EDF2F8;
+}
+
+#pomodoro-app .pm-music-item.is-selected {
+    background: #E3EFFB;
+}
+
+#pomodoro-app .pm-music-art {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    color: #FFFFFF;
+}
+
+#pomodoro-app .pm-music-details {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 3px;
+    min-width: 0;
+}
+
+#pomodoro-app .pm-music-details strong {
+    color: var(--pm-text-primary, #242A32);
+    font-size: 13px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+#pomodoro-app .pm-music-details small {
+    color: var(--pm-text-secondary, #626A73);
+    font-size: 11px;
+}
+
+#pomodoro-app .pm-music-item > i {
+    flex-shrink: 0;
+    color: var(--pm-blue, #014BAA);
+}
+
+
+/* =====================================================
+   12. MINI PLAYER
+   ===================================================== */
+
+#pomodoro-app .pm-mini-player {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    margin-top: 12px;
+    padding: 11px;
+    background: #E7F1FC;
+    border-radius: 11px;
+}
+
+#pomodoro-app .pm-mini-play {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    background: #FFFFFF;
+    border: none;
+    border-radius: 50%;
+    color: var(--pm-blue, #014BAA);
+    cursor: pointer;
+    transition: background 150ms ease;
+}
+
+#pomodoro-app .pm-mini-play:hover {
+    background: var(--pm-blue-t80, #CCDBEE);
+}
+
+#pomodoro-app .pm-player-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 5px;
+    min-width: 0;
+}
+
+#pomodoro-app .pm-player-content strong {
+    color: var(--pm-text-primary, #242A32);
+    font-size: 12px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+#pomodoro-app .pm-progress {
+    display: block;
+    width: 100%;
+    height: 5px;
+    accent-color: var(--pm-blue, #014BAA);
+    cursor: pointer;
+}
+
+#pomodoro-app .pm-progress:disabled {
+    cursor: default;
+    opacity: .65;
+}
+
+#pomodoro-app .pm-player-times {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--pm-text-secondary, #626A73);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+}
+
+#pomodoro-app .pm-volume-icon {
+    flex-shrink: 0;
+    color: var(--pm-blue, #014BAA);
+}
+
+
+/* =====================================================
+   13. NO NESTED SCROLLBARS
+   ===================================================== */
+
+#pomodoro-app .pm-dropdown-library,
+#pomodoro-app .pm-music-library,
+#pomodoro-app .pm-background-grid,
+#pomodoro-app .pm-music-list {
+    max-height: none;
+    overflow: visible;
+}
+
+
+/* =====================================================
+   14. ANIMATIONS
+   ===================================================== */
+
+@keyframes pm-task-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* =====================================================
+   15. TABLET
+   ===================================================== */
+
+@media (max-width: 1100px) {
+    #pomodoro-app .pm-background-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+
+/* =====================================================
+   16. MOBILE
+   ===================================================== */
+
+@media (max-width: 650px) {
+    #pomodoro-app .pm-task-setup {
+        gap: 22px;
+    }
+
+    #pomodoro-app .pm-dropdown-library,
+    #pomodoro-app .pm-music-library {
+        padding: 10px;
+    }
+
+    #pomodoro-app .pm-mini-player {
+        gap: 10px;
+        padding: 10px;
+    }
+}
+
+
+/* =====================================================
+   17. SMALL MOBILE
+   ===================================================== */
+
+@media (max-width: 440px) {
+    #pomodoro-app .pm-bg-selected-thumb {
+        width: 58px;
+    }
+
+    #pomodoro-app .pm-filter-btn {
+        padding: 7px 8px;
+    }
+
+    #pomodoro-app .pm-background-grid {
+        gap: 8px;
+    }
+
+    #pomodoro-app .pm-music-item {
+        gap: 9px;
+    }
+
+    #pomodoro-app .pm-quick-goal {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    #pomodoro-app .pm-quick-goal-icon {
+        width: 34px;
+        height: 34px;
+    }
+
+    #pomodoro-app .pm-goal-dialog-content {
+        padding: 22px 18px;
+    }
+
+    #pomodoro-app .pm-goal-dialog h3 {
+        font-size: 17px;
+    }
+
+    #pomodoro-app .pm-form-actions {
+        flex-direction: column;
+    }
+
+    #pomodoro-app .pm-form-actions button {
+        width: 100%;
+    }
+}
+
+
+/* =====================================================
+   18. EXTRA SMALL MOBILE
+   ===================================================== */
+
+@media (max-width: 380px) {
+    #pomodoro-app .pm-background-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #pomodoro-app .pm-task-date {
+        flex-wrap: wrap;
+    }
+
+    #pomodoro-app .pm-picker-trigger {
+        gap: 9px;
+        padding: 9px;
+    }
+
+    #pomodoro-app .pm-scheduled-active {
+        flex-wrap: wrap;
+    }
+}
+
+
+/* =====================================================
+   19. ACCESSIBILITY
+   ===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    #pomodoro-app .pm-quick-goal,
+    #pomodoro-app .pm-picker-trigger,
+    #pomodoro-app .pm-chevron,
+    #pomodoro-app .pm-bg-item-preview,
+    #pomodoro-app .pm-music-item,
+    #pomodoro-app .pm-mini-play,
+    #pomodoro-app .pm-goal-keep-btn,
+    #pomodoro-app .pm-goal-replace-btn,
+    #pomodoro-app .pm-input,
+    #pomodoro-app .pm-outline-button {
+        transition: none;
+    }
+
+    #pomodoro-app .pm-scheduled-active {
+        animation: none;
+    }
+}
+
+/* =====================================================
+   BACKGROUND PICKER V2 - REAL IMAGE SUPPORT
+   ===================================================== */
+
+#pomodoro-app .pm-bg-item-preview,
+#pomodoro-app .pm-bg-selected-thumb {
+    position: relative;
+    overflow: hidden;
+}
+
+#pomodoro-app .pm-bg-item-preview {
+    display: block;
+    width: 100%;
+    isolation: isolate;
+    background: #E7EDF5;
+}
+
+/* Ảnh trong từng item của thư viện */
+#pomodoro-app .pm-bg-item-preview .pm-bg-real-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+/* Thumbnail của hình nền đã chọn */
+#pomodoro-app .pm-bg-selected-thumb .pm-bg-real-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+/* Nhãn loại hình nền nằm trên ảnh */
+#pomodoro-app .pm-bg-item-preview .pm-media-type {
+    position: absolute;
+    right: 7px;
+    bottom: 7px;
+    z-index: 2;
+
+    padding: 4px 7px;
+
+    border-radius: 6px;
+    background: rgba(13, 25, 43, .72);
+
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: 650;
+
+    backdrop-filter: blur(5px);
+}
+
+/* Nếu đường dẫn ảnh sai */
+#pomodoro-app .pm-bg-real-image.is-error {
+    visibility: hidden;
+}
+
+/* Trạng thái danh mục trống */
+#pomodoro-app .pm-bg-empty-state {
+    grid-column: 1 / -1;
+
+    margin: 0;
+    padding: 22px 12px;
+
+    color: #687385;
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+/* Giữ các phần tử preview không tràn */
+#pomodoro-app .pm-bg-item {
+    min-width: 0;
+}
+
+#pomodoro-app .pm-bg-item-name {
+    overflow-wrap: anywhere;
+}

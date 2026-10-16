@@ -1,0 +1,661 @@
+
+<!-- =====================================================
+     POMODORO WORKSPACE 2.0
+     IN-FOCUS V2.1 - UI REFINEMENT
+
+     Giữ nguyên:
+     - In-Focus Preview
+     - Duration Selector
+     - Custom Duration
+     - Task Summary
+     - Active Focus
+     - Background Image / Video
+     - Global Pause / Resume
+     - Contrast
+     - Exit Dialog
+
+     Điều chỉnh:
+     - Một nút loa duy nhất ở bên trái tên bài nhạc
+     - Không thay ID của bất kỳ chức năng nào
+     ===================================================== -->
+
+<!-- =====================================================
+     01. IN-FOCUS PREVIEW
+     ===================================================== -->
+
+<section
+    id="pm-in-focus"
+    class="pm-in-focus"
+    aria-labelledby="pm-in-focus-title"
+>
+
+    <!-- Section Header -->
+    <header class="pm-in-header">
+
+        <div class="pm-in-header-content">
+
+            <span class="pm-in-eyebrow">
+                <span
+                    class="pm-in-eyebrow-dot"
+                    aria-hidden="true"
+                ></span>
+                IN-FOCUS
+            </span>
+
+            <h2 id="pm-in-focus-title">
+                Không gian tập trung
+            </h2>
+
+            <p>
+                Chọn thời lượng phù hợp.
+                Khi sẵn sàng, hãy dành trọn
+                sự chú ý cho mục tiêu của bạn.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================
+         02. TIMER PREVIEW CARD
+         ================================================= -->
+
+    <div
+        id="pm-focus-preview"
+        class="pm-focus-preview"
+    >
+
+        <header class="pm-focus-preview-header">
+
+            <div class="pm-focus-preview-heading">
+
+                <h3>Thiết lập thời gian</h3>
+
+                <p>
+                    Một phiên tập trung,
+                    một mục tiêu rõ ràng.
+                </p>
+
+            </div>
+
+            <span
+                class="pm-focus-preview-icon"
+                aria-hidden="true"
+            >
+                <i class="fa-regular fa-clock"></i>
+            </span>
+
+        </header>
+
+        <span
+            class="pm-focus-header-accent"
+            aria-hidden="true"
+        ></span>
+
+
+        <div class="pm-focus-preview-body">
+
+            <!-- =========================================
+                 A. DURATION SELECTOR
+                 ========================================= -->
+
+            <div class="pm-focus-duration-section">
+
+                <div
+                    id="pm-focus-duration-label"
+                    class="pm-focus-field-label"
+                >
+                    <i
+                        class="fa-regular fa-hourglass-half"
+                        aria-hidden="true"
+                    ></i>
+
+                    Thời lượng tập trung
+                </div>
+
+
+                <div
+                    id="pm-focus-duration-options"
+                    class="pm-focus-duration-options"
+                    role="group"
+                    aria-labelledby="pm-focus-duration-label"
+                >
+
+                    <button
+                        type="button"
+                        class="pm-focus-duration-btn"
+                        data-minutes="5"
+                        aria-pressed="false"
+                    >
+                        5 phút
+                    </button>
+
+                    <button
+                        type="button"
+                        class="pm-focus-duration-btn"
+                        data-minutes="15"
+                        aria-pressed="false"
+                    >
+                        15 phút
+                    </button>
+
+                    <button
+                        type="button"
+                        class="pm-focus-duration-btn is-selected"
+                        data-minutes="25"
+                        aria-pressed="true"
+                    >
+                        25 phút
+                    </button>
+
+                    <button
+                        type="button"
+                        id="pm-focus-custom-toggle"
+                        class="pm-focus-duration-btn"
+                        data-minutes="custom"
+                        aria-pressed="false"
+                        aria-controls="pm-focus-custom-field"
+                    >
+                        <i
+                            class="fa-solid fa-sliders"
+                            aria-hidden="true"
+                        ></i>
+
+                        Tùy chỉnh
+                    </button>
+
+                </div>
+
+
+                <!-- =====================================
+                     B. COMPACT CUSTOM DURATION
+                     ===================================== -->
+
+                <div
+                    id="pm-focus-custom-field"
+                    class="pm-focus-custom-field"
+                    hidden
+                >
+
+                    <div class="pm-focus-custom-info">
+
+                        <label for="pm-focus-custom-minutes">
+                            Thời gian tùy chỉnh
+                        </label>
+
+                        <p id="pm-focus-custom-hint">
+                            Từ 1 đến 180 phút
+                        </p>
+
+                    </div>
+
+                    <div class="pm-focus-custom-input-row">
+
+                        <input
+                            type="number"
+                            id="pm-focus-custom-minutes"
+                            min="1"
+                            max="180"
+                            step="1"
+                            value="30"
+                            inputmode="numeric"
+                            aria-describedby="pm-focus-custom-hint"
+                        >
+
+                        <span>phút</span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Divider -->
+
+            <div
+                class="pm-focus-preview-divider"
+                aria-hidden="true"
+            ></div>
+
+
+            <!-- =========================================
+                 C. TIMER PREVIEW
+                 ========================================= -->
+
+            <div class="pm-focus-timer-preview">
+
+                <span class="pm-focus-timer-caption">
+                    SẴN SÀNG TẬP TRUNG
+                </span>
+
+                <div
+                    id="pm-focus-preview-time"
+                    class="pm-focus-preview-time"
+                    role="timer"
+                    aria-label="Thời lượng phiên tập trung"
+                >
+                    25:00
+                </div>
+
+                <p class="pm-focus-preview-caption">
+                    Đồng hồ sẽ bắt đầu đếm ngược
+                    khi bạn vào chế độ tập trung.
+                </p>
+
+            </div>
+
+
+            <!-- =========================================
+                 D. TASK SUMMARY
+                 ========================================= -->
+
+            <div
+                id="pm-focus-task-summary"
+                class="pm-focus-task-summary"
+            >
+
+                <span class="pm-focus-task-summary-icon">
+                    <i
+                        class="fa-solid fa-bullseye"
+                        aria-hidden="true"
+                    ></i>
+                </span>
+
+                <div class="pm-focus-task-summary-text">
+
+                    <small>
+                        NHIỆM VỤ PHIÊN HỌC
+                    </small>
+
+                    <strong id="pm-focus-task-name">
+                        Chưa chọn nhiệm vụ
+                    </strong>
+
+                </div>
+
+                <i
+                    class="fa-solid fa-circle-check pm-focus-task-check"
+                    aria-hidden="true"
+                    hidden
+                ></i>
+
+            </div>
+
+
+            <!-- =========================================
+                 E. START BUTTON
+                 ========================================= -->
+
+            <button
+                type="button"
+                id="pm-focus-start"
+                class="pm-focus-start-btn"
+                disabled
+            >
+
+                <i
+                    class="fa-solid fa-play"
+                    aria-hidden="true"
+                ></i>
+
+                Bắt đầu tập trung
+
+                <i
+                    class="fa-solid fa-arrow-right"
+                    aria-hidden="true"
+                ></i>
+
+            </button>
+
+            <p
+                id="pm-focus-start-hint"
+                class="pm-focus-start-hint"
+                role="status"
+            >
+                Chọn một nhiệm vụ trong Pre-Focus
+                để bắt đầu phiên học.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     03. ACTIVE FOCUS SCREEN
+     ===================================================== -->
+
+<div
+    id="pm-focus-screen"
+    class="pm-focus-screen"
+    data-contrast="light"
+    role="region"
+    aria-label="Chế độ tập trung toàn màn hình"
+    hidden
+>
+
+    <!-- ================================================
+         BACKGROUND
+         ================================================ -->
+
+    <div
+        class="pm-focus-background"
+        aria-hidden="true"
+    >
+
+        <div
+            id="pm-focus-background-image"
+            class="pm-focus-background-image"
+        ></div>
+
+        <video
+            id="pm-focus-background-video"
+            class="pm-focus-background-video"
+            muted
+            loop
+            playsinline
+            preload="none"
+            hidden
+        ></video>
+
+    </div>
+
+
+    <!-- Adaptive Contrast Overlay -->
+
+    <div
+        class="pm-focus-overlay"
+        aria-hidden="true"
+    ></div>
+
+
+    <!-- ================================================
+         ACTIVE CONTENT
+         ================================================ -->
+
+    <div class="pm-focus-screen-content">
+
+        <!-- HEADER -->
+
+        <header class="pm-focus-screen-header">
+
+            <div class="pm-focus-brand">
+
+                <span
+                    class="pm-focus-brand-dot"
+                    aria-hidden="true"
+                ></span>
+
+                <span>FOCUS MODE</span>
+
+            </div>
+
+
+            <!-- Contrast Buttons -->
+
+            <div
+                class="pm-focus-contrast-switch"
+                role="group"
+                aria-label="Màu hiển thị bộ đếm"
+            >
+
+                <button
+                    type="button"
+                    id="pm-focus-contrast-light"
+                    class="pm-focus-contrast-btn is-selected"
+                    data-contrast-choice="light"
+                    aria-pressed="true"
+                    title="Chữ và nút màu trắng"
+                >
+
+                    <i
+                        class="fa-regular fa-moon"
+                        aria-hidden="true"
+                    ></i>
+
+                    Trắng
+                </button>
+
+                <button
+                    type="button"
+                    id="pm-focus-contrast-dark"
+                    class="pm-focus-contrast-btn"
+                    data-contrast-choice="dark"
+                    aria-pressed="false"
+                    title="Chữ và nút màu đen"
+                >
+
+                    <i
+                        class="fa-regular fa-sun"
+                        aria-hidden="true"
+                    ></i>
+
+                    Đen
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- ============================================
+             TIMER CENTER
+             ============================================ -->
+
+        <main class="pm-focus-center">
+
+            <!-- Current Task -->
+
+            <div class="pm-focus-active-task">
+
+                <span class="pm-focus-active-eyebrow">
+                    ĐANG TẬP TRUNG VÀO
+                </span>
+
+                <h2 id="pm-focus-active-task-name">
+                    Nhiệm vụ đang học
+                </h2>
+
+            </div>
+
+
+            <!-- Countdown -->
+
+            <div
+                id="pm-focus-active-time"
+                class="pm-focus-active-time"
+                role="timer"
+                aria-label="Thời gian tập trung còn lại"
+            >
+                25:00
+            </div>
+
+
+            <!-- Focus Status -->
+
+            <div
+                id="pm-focus-active-status"
+                class="pm-focus-active-status"
+                role="status"
+            >
+
+                <span
+                    class="pm-focus-status-dot"
+                    aria-hidden="true"
+                ></span>
+
+                Đang tập trung
+            </div>
+
+
+            <!-- Global Pause / Resume -->
+
+            <div class="pm-focus-primary-controls">
+
+                <button
+                    type="button"
+                    id="pm-focus-pause"
+                    class="pm-focus-control pm-focus-main-control"
+                >
+
+                    <i
+                        class="fa-solid fa-pause"
+                        aria-hidden="true"
+                    ></i>
+
+                    <span>Tạm dừng</span>
+
+                </button>
+
+                <button
+                    type="button"
+                    id="pm-focus-resume"
+                    class="pm-focus-control pm-focus-main-control"
+                    hidden
+                >
+
+                    <i
+                        class="fa-solid fa-play"
+                        aria-hidden="true"
+                    ></i>
+
+                    <span>Tiếp tục</span>
+
+                </button>
+
+            </div>
+
+        </main>
+
+
+        <!-- ============================================
+             FOOTER
+             ============================================ -->
+
+        <footer class="pm-focus-screen-footer">
+
+            <!-- ========================================
+                 MUSIC - MINIMAL VERSION
+
+                 Chỉ một nút loa duy nhất.
+                 Nút loa nằm bên trái tên bài.
+                 Giữ nguyên ID để JS hoạt động.
+                 ======================================== -->
+
+            <div class="pm-focus-music">
+
+                <button
+                    type="button"
+                    id="pm-focus-music-toggle"
+                    class="pm-focus-control pm-focus-music-toggle"
+                    aria-label="Bật hoặc tắt nhạc nền"
+                    aria-pressed="false"
+                >
+
+                    <i
+                        class="fa-solid fa-volume-xmark"
+                        aria-hidden="true"
+                    ></i>
+
+                </button>
+
+
+                <div class="pm-focus-music-info">
+
+                    <small>NHẠC NỀN</small>
+
+                    <strong id="pm-focus-active-music-name">
+                        Chưa chọn nhạc
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- EXIT BUTTON -->
+
+            <button
+                type="button"
+                id="pm-focus-exit"
+                class="pm-focus-control pm-focus-exit-btn"
+                aria-haspopup="dialog"
+                aria-controls="pm-focus-exit-dialog"
+            >
+
+                <i
+                    class="fa-solid fa-arrow-right-from-bracket"
+                    aria-hidden="true"
+                ></i>
+
+                <span>Gác lại</span>
+
+            </button>
+
+        </footer>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     04. CONFIRM EXIT DIALOG
+     ===================================================== -->
+
+<dialog
+    id="pm-focus-exit-dialog"
+    class="pm-focus-exit-dialog"
+    aria-labelledby="pm-focus-exit-title"
+    aria-describedby="pm-focus-exit-description"
+>
+
+    <div class="pm-focus-exit-dialog-content">
+
+        <div class="pm-focus-exit-icon">
+
+            <i
+                class="fa-solid fa-arrow-right-from-bracket"
+                aria-hidden="true"
+            ></i>
+
+        </div>
+
+        <h3 id="pm-focus-exit-title">
+            Bạn muốn gác lại phiên này?
+        </h3>
+
+        <p id="pm-focus-exit-description">
+            Rời khỏi màn hình lúc này sẽ tạm dừng
+            không gian tập trung và chưa ghi nhận
+            kết quả cho chuỗi rèn luyện.
+        </p>
+
+
+        <div class="pm-focus-exit-actions">
+
+            <button
+                type="button"
+                id="pm-focus-keep"
+                class="pm-focus-keep-btn"
+            >
+                Giữ tập trung
+            </button>
+
+            <button
+                type="button"
+                id="pm-focus-confirm-exit"
+                class="pm-focus-confirm-exit-btn"
+            >
+                Xác nhận gác lại
+            </button>
+
+        </div>
+
+    </div>
+
+</dialog>

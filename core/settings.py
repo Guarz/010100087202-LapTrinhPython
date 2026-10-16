@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-)-e7pb)b7=p(a==305qrl40iliwpb-$9(t-)l)auju3tk9xz-a')
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = True
 # SECURITY WARNING: don't run with debug turned on in production!
 ALLOWED_HOSTS = ['*']
 
@@ -116,8 +116,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-# Cấu hình thu thập Static files
-STATIC_URL = 'static/'
+# URL phục vụ CSS, JavaScript và hình ảnh
+STATIC_URL = '/static/'
+
+# Thư mục static nguồn của toàn dự án
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+# Thư mục Django thu thập static khi deploy
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Email

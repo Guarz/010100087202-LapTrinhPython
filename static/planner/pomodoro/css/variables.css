@@ -1,0 +1,281 @@
+
+/* =====================================================
+   POMODORO WORKSPACE 2.0 - DESIGN TOKENS
+   Theme:
+   - AARHUSIAN SKY / WHITE CHALK
+   - CARTOON VIOLENCE (RED)
+   - GRASS (GREEN)
+   - LIQUID LAVA (ORANGE)
+
+   Scope: #pomodoro-app
+   ===================================================== */
+
+#pomodoro-app {
+
+    /* =====================================================
+       01. CARTOON VIOLENCE - RED PALETTE
+       ===================================================== */
+
+    --pm-red: #D21624;
+
+    /* RED - SHADES */
+    --pm-red-shade-10: #BD1420;
+    --pm-red-shade-20: #A8121D;
+    --pm-red-shade-30: #930F19;
+    --pm-red-shade-40: #7E0D16;
+    --pm-red-shade-50: #690B12;
+    --pm-red-shade-60: #54090E;
+    --pm-red-shade-70: #3F070B;
+    --pm-red-shade-80: #2A0407;
+    --pm-red-shade-90: #150204;
+
+    /* RED - TINTS */
+    --pm-red-tint-10: #D72D3A;
+    --pm-red-tint-20: #DB4550;
+    --pm-red-tint-30: #E05C66;
+    --pm-red-tint-40: #E4737C;
+    --pm-red-tint-50: #E98B92;
+    --pm-red-tint-60: #EDA2A7;
+    --pm-red-tint-70: #F2B9BD;
+    --pm-red-tint-80: #F6D0D3;
+    --pm-red-tint-90: #FBE8E9;
+
+
+    /* =====================================================
+       02. GRASS - GREEN PALETTE
+       ===================================================== */
+
+    --pm-green: #5CA623;
+
+    /* GREEN - SHADES */
+    --pm-green-shade-10: #539520;
+    --pm-green-shade-20: #4A851C;
+    --pm-green-shade-30: #407419;
+    --pm-green-shade-40: #376415;
+    --pm-green-shade-50: #2E5312;
+    --pm-green-shade-60: #25420E;
+    --pm-green-shade-70: #1C320B;
+    --pm-green-shade-80: #122107;
+    --pm-green-shade-90: #091104;
+
+    /* GREEN - TINTS */
+    --pm-green-tint-10: #6CAF39;
+    --pm-green-tint-20: #7DB84F;
+    --pm-green-tint-30: #8DC165;
+    --pm-green-tint-40: #9DCA7B;
+    --pm-green-tint-50: #AED391;
+    --pm-green-tint-60: #BEDBA7;
+    --pm-green-tint-70: #CEE4BD;
+    --pm-green-tint-80: #DEEDD3;
+    --pm-green-tint-90: #EFF6E9;
+
+
+    /* =====================================================
+       03. LIQUID LAVA - ORANGE PALETTE
+
+       Sử dụng cho:
+       - Streak
+       - Chuỗi ngày tập trung
+       - Các thành tích liên quan đến duy trì thói quen
+       ===================================================== */
+
+    --pm-orange: #F27405;
+
+    /* ORANGE - SHADES */
+    --pm-orange-shade-10: #DA6805;
+    --pm-orange-shade-20: #C25D04;
+    --pm-orange-shade-30: #A95104;
+    --pm-orange-shade-40: #914603;
+    --pm-orange-shade-50: #793A03;
+    --pm-orange-shade-60: #612E02;
+    --pm-orange-shade-70: #492302;
+    --pm-orange-shade-80: #301701;
+    --pm-orange-shade-90: #180C01;
+
+    /* ORANGE - TINTS */
+    --pm-orange-tint-10: #F3821E;
+    --pm-orange-tint-20: #F59037;
+    --pm-orange-tint-30: #F69E50;
+    --pm-orange-tint-40: #F7AC69;
+    --pm-orange-tint-50: #F9BA82;
+    --pm-orange-tint-60: #FAC79B;
+    --pm-orange-tint-70: #FBD5B4;
+    --pm-orange-tint-80: #FCE3CD;
+    --pm-orange-tint-90: #FEF1E6;
+
+
+    /* =====================================================
+       04. BRAND COLORS
+       ===================================================== */
+
+    --pm-primary: #014BAA;
+    --pm-cream: #F8F3F0;
+
+
+    /* =====================================================
+       05. AARHUSIAN SKY - SHADES
+       ===================================================== */
+
+    --pm-blue-90: #014499;
+    --pm-blue-80: #013C88;
+    --pm-blue-70: #013577;
+    --pm-blue-60: #012D66;
+    --pm-blue-50: #012655;
+    --pm-blue-40: #001E44;
+    --pm-blue-30: #001733;
+    --pm-blue-20: #000F22;
+    --pm-blue-10: #000811;
+
+
+    /* =====================================================
+       06. AARHUSIAN SKY - TINTS
+       ===================================================== */
+
+    --pm-blue-t10: #1A5DB3;
+    --pm-blue-t20: #346FBB;
+    --pm-blue-t30: #4D81C4;
+    --pm-blue-t40: #6793CC;
+    --pm-blue-t50: #80A5D5;
+    --pm-blue-t60: #99B7DD;
+    --pm-blue-t70: #B3C9E6;
+    --pm-blue-t80: #CCDBEE;
+    --pm-blue-t90: #E6EDF7;
+
+
+    /* =====================================================
+       07. WHITE CHALK - SHADES
+       ===================================================== */
+
+    --pm-cream-s10: #DFDBD8;
+    --pm-cream-s20: #C6C2C0;
+    --pm-cream-s30: #AEAAA8;
+    --pm-cream-s40: #959290;
+    --pm-cream-s50: #7C7A78;
+    --pm-cream-s60: #636160;
+    --pm-cream-s70: #4A4948;
+    --pm-cream-s80: #323130;
+    --pm-cream-s90: #191818;
+
+
+    /* =====================================================
+       08. WHITE CHALK - TINTS
+       ===================================================== */
+
+    --pm-cream-t10: #F9F4F2;
+    --pm-cream-t20: #F9F5F3;
+    --pm-cream-t30: #FAF7F5;
+    --pm-cream-t40: #FBF8F6;
+    --pm-cream-t50: #FCF9F8;
+    --pm-cream-t60: #FCFAF9;
+    --pm-cream-t70: #FDFBFB;
+    --pm-cream-t80: #FEFDFC;
+    --pm-cream-t90: #FEFEFE;
+
+
+    /* =====================================================
+       09. SEMANTIC COLORS
+       ===================================================== */
+
+    /* BLUE - AARHUSIAN SKY */
+    --pm-blue: var(--pm-primary);
+    --pm-blue-hover: var(--pm-blue-80);
+    --pm-blue-soft: var(--pm-blue-t90);
+
+    /* RED - CARTOON VIOLENCE */
+    --pm-red-hover: var(--pm-red-shade-10);
+    --pm-red-soft: var(--pm-red-tint-90);
+
+    /* GREEN - GRASS */
+    --pm-green-hover: var(--pm-green-shade-10);
+    --pm-green-soft: var(--pm-green-tint-90);
+
+    /* ORANGE - LIQUID LAVA */
+    --pm-orange-hover: var(--pm-orange-shade-10);
+    --pm-orange-soft: var(--pm-orange-tint-90);
+    --pm-orange-border: var(--pm-orange-tint-80);
+    --pm-orange-text: var(--pm-orange-shade-30);
+
+    /* BACKGROUND / SURFACE */
+    --pm-background: var(--pm-cream);
+    --pm-surface: var(--pm-cream-t90);
+    --pm-surface-muted: var(--pm-cream-t30);
+
+    /* TYPOGRAPHY COLORS */
+    --pm-text-primary: var(--pm-cream-s90);
+    --pm-text-secondary: var(--pm-cream-s60);
+    --pm-text-inverse: #FFFFFF;
+
+
+    /* =====================================================
+       10. BORDERS & SHADOWS
+       ===================================================== */
+
+    --pm-border: var(--pm-cream-s10);
+
+    --pm-shadow-sm:
+        0 2px 8px rgba(0, 30, 68, 0.04);
+
+    --pm-shadow-md:
+        0 12px 32px rgba(0, 30, 68, 0.08);
+
+
+    /* =====================================================
+       11. BORDER RADIUS
+       ===================================================== */
+
+    --pm-radius-sm: 10px;
+    --pm-radius-md: 16px;
+    --pm-radius-lg: 24px;
+    --pm-radius-xl: 32px;
+
+
+    /* =====================================================
+       12. SPACING
+       ===================================================== */
+
+    --pm-space-1: 4px;
+    --pm-space-2: 8px;
+    --pm-space-3: 12px;
+    --pm-space-4: 16px;
+    --pm-space-5: 24px;
+    --pm-space-6: 32px;
+    --pm-space-7: 48px;
+    --pm-space-8: 64px;
+
+
+    /* =====================================================
+       13. TYPOGRAPHY
+       ===================================================== */
+
+    --pm-font-xs: 12px;
+    --pm-font-sm: 14px;
+    --pm-font-md: 16px;
+    --pm-font-lg: 20px;
+    --pm-font-xl: 28px;
+    --pm-font-2xl: 40px;
+
+
+    /* =====================================================
+       14. ANIMATION
+       ===================================================== */
+
+    --pm-transition-fast: 150ms ease;
+    --pm-transition-normal: 250ms ease;
+
+
+    /* =====================================================
+       15. COMPATIBILITY ALIASES
+
+       Giữ tương thích với các CSS hiện tại.
+       ===================================================== */
+
+    /* CRIMSON - RED ALIAS */
+    --pm-crimson: var(--pm-red);
+    --pm-crimson-hover: var(--pm-red-hover);
+    --pm-crimson-soft: var(--pm-red-soft);
+
+    /* CREAM */
+    --pm-pink: var(--pm-cream);
+    --pm-surface-pink: var(--pm-surface-muted);
+
+}

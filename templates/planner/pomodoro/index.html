@@ -1,0 +1,158 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+Pomodoro Workspace | AI StudyPlanner
+{% endblock %}
+
+
+{% block extra_css %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'planner/pomodoro/css/pomodoro.css' %}"
+>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div id="pomodoro-app">
+
+    <!-- =====================================================
+         01. PRE-FOCUS
+
+         - Scheduled Task thật từ Django
+         - Quick Goal
+         - Background Picker
+         - Music Player và nghe thử
+
+         Giữ nguyên giao diện và cơ chế tương tác.
+         ===================================================== -->
+
+    {% include "planner/pomodoro/layouts/pre_focus.html" %}
+
+
+    <!-- =====================================================
+         02. IN-FOCUS
+
+         - Thời lượng tập trung
+         - Countdown Engine V2.2
+         - Fullscreen
+         - Pause / Resume
+         - Gác lại
+         - Music Player
+         - Background Picker
+
+         Không thay đổi logic Focus Timer.
+         ===================================================== -->
+
+    {% include "planner/pomodoro/layouts/in_focus.html" %}
+
+
+    <!-- =====================================================
+         03. POST-FOCUS DASHBOARD
+
+         - Tổng thời gian tập trung
+         - Số phiên hoàn thành
+         - Chuỗi ngày tập trung
+         - Heatmap Timeline V2.3
+
+         C3.3:
+         - Statistics Controller lấy dữ liệu thật
+           từ Django Statistics API.
+         - Tự cập nhật khi lưu phiên thành công.
+         - Không thay đổi HTML/CSS các thẻ.
+
+         C4.2:
+         - Heatmap Controller lấy dữ liệu thật
+           từ Django Heatmap API.
+         - Truyền dữ liệu cho Heatmap Timeline V2.3.
+         - Tự cập nhật sau khi phiên được lưu.
+         - Không thay đổi cấu trúc Timeline.
+         ===================================================== -->
+
+    {% include "planner/pomodoro/layouts/post_focus.html" %}
+
+
+    <!-- =====================================================
+         04. CELEBRATION SHEET V4
+
+         - Hiển thị khi phiên hoàn thành
+         - Không hiển thị khi Gác lại
+         - Xem tiến độ / Để sau
+
+         Giữ nguyên toàn bộ UX/UI hiện tại.
+         ===================================================== -->
+
+    {% include "planner/pomodoro/components/session_summary.html" %}
+
+</div>
+
+
+<!-- =========================================================
+     C2.3.2 - DJANGO TASK DATA
+
+     Django cung cấp danh sách Task thuộc user hiện tại.
+
+     Task Selector V13 đọc dữ liệu từ:
+     #pm-scheduled-tasks-data
+
+     Dữ liệu:
+     - id
+     - taskId
+     - name
+     - type
+
+     Không tạo dữ liệu Task mẫu.
+     ========================================================= -->
+
+{{ pomodoro_tasks|json_script:"pm-scheduled-tasks-data" }}
+
+{% endblock %}
+
+
+{% block extra_js %}
+
+<!-- =========================================================
+     POMODORO WORKSPACE 2.0 - APP V19
+
+     MODULES:
+
+     01. Focus Timer V2.2
+     02. Task Selector V13 - Django Integration
+     03. Background Picker V2
+     04. Music Player - Music Event Fix
+     05. Layout Height Sync
+     06. Celebration Sheet V4
+     07. Heatmap Timeline V2.3
+     08. Session Recorder V2 - C2.3.3
+     09. Statistics Controller - C3.3
+     10. Heatmap Backend Controller - C4.2
+
+     STATISTICS API:
+     GET /api/pomodoro-statistics/
+
+     HEATMAP API:
+     GET /api/pomodoro-heatmap/
+
+     FRONTEND:
+     - Hiển thị thống kê từ database.
+     - Hiển thị số phút tập trung theo ngày.
+     - Tự cập nhật sau khi lưu phiên thành công.
+
+     GIỮ NGUYÊN:
+     - Focus Timer
+     - Music Player
+     - Celebration Sheet
+     - Heatmap Timeline V2.3
+     ========================================================= -->
+
+<script
+    type="module"
+    src="{% static 'planner/pomodoro/js/app.js' %}?v=20261015-c42"
+></script>
+
+{% endblock %}

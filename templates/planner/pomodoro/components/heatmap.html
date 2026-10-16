@@ -1,0 +1,271 @@
+
+<!-- ============================================================
+     POMODORO WORKSPACE 2.0
+     HEATMAP TIMELINE - V2
+
+     Thiết kế:
+     - Một biểu đồ tần suất duy nhất
+     - Hiển thị lịch sử theo tuần
+     - Nhóm cột tuần theo tháng
+     - Bảy hàng: Thứ Hai đến Chủ nhật
+     - Mỗi ô hiển thị số phút tập trung
+     - Hàng cuối: Tổng cộng theo từng tuần
+     - Cuộn ngang để xem lịch sử dài hạn
+
+     Ngôn ngữ hiển thị: Tiếng Việt
+
+     Dữ liệu:
+     - Chỉ tính các phiên hoàn thành
+     - Phiên Gác lại không cộng vào Heatmap
+
+     JavaScript:
+     - heatmap.js sẽ tạo ma trận và cập nhật dữ liệu
+     ============================================================ -->
+
+<section
+    id="pm-focus-heatmap"
+    class="pm-focus-heatmap"
+    aria-labelledby="pm-heatmap-title"
+>
+
+    <!-- ========================================================
+         01. HEADER
+         Tiêu đề bên trái, chú giải bên phải
+         ======================================================== -->
+
+    <header class="pm-heatmap-header">
+
+        <div class="pm-heatmap-heading">
+
+            <h3 id="pm-heatmap-title">
+                Tần suất học tập
+            </h3>
+
+        </div>
+
+
+        <!-- ====================================================
+             CHÚ GIẢI BỐN MỨC ĐỘ
+             ==================================================== -->
+
+        <div
+            class="pm-heatmap-legend"
+            role="group"
+            aria-label="Chú giải mức độ tập trung"
+        >
+
+            <!-- Mức 0 -->
+
+            <span class="pm-heatmap-legend-item">
+
+                <span
+                    class="pm-heatmap-legend-cell"
+                    data-level="0"
+                    aria-hidden="true"
+                ></span>
+
+                <span>Không có hoạt động</span>
+
+            </span>
+
+
+            <!-- Mức 1 -->
+
+            <span class="pm-heatmap-legend-item">
+
+                <span
+                    class="pm-heatmap-legend-cell"
+                    data-level="1"
+                    aria-hidden="true"
+                ></span>
+
+                <span>Dưới 15 phút</span>
+
+            </span>
+
+
+            <!-- Mức 2 -->
+
+            <span class="pm-heatmap-legend-item">
+
+                <span
+                    class="pm-heatmap-legend-cell"
+                    data-level="2"
+                    aria-hidden="true"
+                ></span>
+
+                <span>15–60 phút</span>
+
+            </span>
+
+
+            <!-- Mức 3 -->
+
+            <span class="pm-heatmap-legend-item">
+
+                <span
+                    class="pm-heatmap-legend-cell"
+                    data-level="3"
+                    aria-hidden="true"
+                ></span>
+
+                <span>Trên 60 phút</span>
+
+            </span>
+
+        </div>
+
+    </header>
+
+
+    <!-- ========================================================
+         02. HEATMAP CONTAINER
+         ======================================================== -->
+
+    <div class="pm-heatmap-body">
+
+        <!-- ====================================================
+             VÙNG CUỘN NGANG
+
+             JavaScript sẽ hiển thị:
+             - Các tháng phía trên
+             - Thứ Hai đến Chủ nhật bên trái
+             - Ma trận hoạt động theo tuần
+             - Tổng cộng ở hàng cuối
+
+             Giữ ID pm-heatmap-scroll để JS sử dụng.
+             ==================================================== -->
+
+        <div
+            id="pm-heatmap-scroll"
+            class="pm-heatmap-scroll"
+            role="region"
+            tabindex="0"
+            aria-label="Biểu đồ tần suất học tập có thể cuộn ngang"
+        >
+
+            <!-- =================================================
+                 HEATMAP GRID
+
+                 Các hàng:
+                 1. Tháng
+                 2. Thứ Hai
+                 3. Thứ Ba
+                 4. Thứ Tư
+                 5. Thứ Năm
+                 6. Thứ Sáu
+                 7. Thứ Bảy
+                 8. Chủ nhật
+                 9. Tổng cộng
+
+                 Các cột:
+                 Mỗi cột tương ứng với một tuần.
+
+                 Các ô sẽ được tạo bởi heatmap.js.
+                 ================================================= -->
+
+            <div
+                id="pm-heatmap-grid"
+                class="pm-heatmap-grid"
+                role="group"
+                aria-label="Ma trận thời gian tập trung theo ngày"
+            >
+
+                <!-- Trạng thái trước khi JavaScript khởi tạo -->
+
+                <div class="pm-heatmap-placeholder">
+
+                    Đang chuẩn bị biểu đồ tần suất học tập...
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         03. SELECTED DAY DETAILS
+
+         Khi người dùng chọn một ô ngày:
+         - Hiển thị ngày cụ thể
+         - Tổng số phút đã tập trung trong ngày
+
+         Mặc định ẩn.
+         ======================================================== -->
+
+    <div
+        id="pm-heatmap-day-details"
+        class="pm-heatmap-day-details"
+        role="status"
+        aria-live="polite"
+        hidden
+    >
+
+        <div class="pm-heatmap-day-detail-content">
+
+            <span
+                class="pm-heatmap-day-detail-icon"
+                aria-hidden="true"
+            >
+                <i class="fa-regular fa-calendar-check"></i>
+            </span>
+
+
+            <div class="pm-heatmap-day-detail-text">
+
+                <strong id="pm-heatmap-selected-date">
+                    —
+                </strong>
+
+                <p id="pm-heatmap-selected-description">
+
+                    Chọn một ngày để xem thời gian tập trung.
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         04. FOOTER
+
+         Chú thích về dữ liệu và khả năng cuộn ngang.
+         Không thêm bộ chọn Tuần / Tháng / Năm.
+         ======================================================== -->
+
+    <footer class="pm-heatmap-footer">
+
+        <p class="pm-heatmap-note">
+
+            <i
+                class="fa-solid fa-circle-info"
+                aria-hidden="true"
+            ></i>
+
+            Mỗi ô thể hiện số phút tập trung trong ngày.
+            Chỉ tính những phiên đã hoàn thành.
+
+        </p>
+
+
+        <span class="pm-heatmap-scroll-hint">
+
+            <i
+                class="fa-solid fa-arrows-left-right"
+                aria-hidden="true"
+            ></i>
+
+            Cuộn ngang để xem thêm
+
+        </span>
+
+    </footer>
+
+</section>

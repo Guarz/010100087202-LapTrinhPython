@@ -1,0 +1,222 @@
+
+/* =====================================================
+   POMODORO WORKSPACE 2.0
+   MAIN STYLESHEET - VERSION 3
+
+   Theme: AARHUSIAN SKY / WHITE CHALK
+
+   Primary: #014BAA
+   Base:    #F8F3F0
+
+   Scope: #pomodoro-app
+
+   Kiến trúc:
+   - Design System
+   - Pre-Focus / In-Focus / Post-Focus
+   - Shared Components
+   - Responsive
+   - Accessibility
+   ===================================================== */
+
+
+/* =====================================================
+   1. DESIGN SYSTEM
+   ===================================================== */
+
+@import url("./variables.css");
+@import url("./themes.css");
+
+
+/* =====================================================
+   2. LAYOUTS
+   ===================================================== */
+
+@import url("./pre-focus.css");
+@import url("./in-focus.css");
+@import url("./post-focus.css");
+@import url("./post-focus.css");
+
+
+/* =====================================================
+   3. SHARED COMPONENTS
+   ===================================================== */
+
+@import url("./components.css");
+
+
+/* =====================================================
+   4. MAIN WORKSPACE
+   ===================================================== */
+
+#pomodoro-app {
+
+    /* Typography */
+    font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        sans-serif;
+
+    color: var(--pm-theme-heading, #242A32);
+
+    /* Không tạo box nền ngoài */
+    background: transparent;
+
+    /* Không tạo khoảng đệm ngoài hai card */
+    padding: 0;
+    margin: 0;
+
+    /* Không bo góc workspace */
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+
+    /* Kích thước */
+    width: 100%;
+    min-width: 0;
+    min-height: 100%;
+
+    /* Cải thiện hiển thị chữ */
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+
+}
+
+
+/* =====================================================
+   5. BOX SIZING
+   ===================================================== */
+
+#pomodoro-app,
+#pomodoro-app *,
+#pomodoro-app *::before,
+#pomodoro-app *::after {
+    box-sizing: border-box;
+}
+
+
+/* =====================================================
+   6. MAIN WORKSPACE TYPOGRAPHY
+   ===================================================== */
+
+#pomodoro-app .pm-page-header {
+    margin-bottom: 32px;
+}
+
+#pomodoro-app .pm-page-title {
+    margin: 0;
+
+    color: var(--pm-theme-heading, #242A32);
+
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 750;
+    line-height: 1.2;
+    letter-spacing: -0.035em;
+}
+
+#pomodoro-app .pm-page-description {
+    margin: 12px 0 0;
+
+    color: var(--pm-theme-muted, #626A73);
+
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+
+/* =====================================================
+   7. SHARED RESPONSIVE BEHAVIOR
+   ===================================================== */
+
+/*
+   Ngăn phần tử nội bộ làm tràn Grid/Flex.
+
+   Đặc biệt hữu ích cho:
+   - Task Setup
+   - Environment Setup
+   - Background Dropdown
+   - Music Dropdown
+*/
+
+#pomodoro-app .pm-setup-grid,
+#pomodoro-app .pm-setup-card,
+#pomodoro-app .pm-card-body,
+#pomodoro-app .pm-environment-column {
+    min-width: 0;
+}
+
+
+/* =====================================================
+   8. THEME TRANSITIONS
+   ===================================================== */
+
+#pomodoro-app {
+    transition:
+        color var(--pm-transition-normal, 250ms ease);
+}
+
+
+/* =====================================================
+   9. RESPONSIVE - TABLET
+   ===================================================== */
+
+@media (max-width: 768px) {
+
+    #pomodoro-app .pm-page-header {
+        margin-bottom: 24px;
+    }
+
+    #pomodoro-app .pm-page-description {
+        font-size: 14px;
+    }
+
+}
+
+
+/* =====================================================
+   10. RESPONSIVE - MOBILE
+   ===================================================== */
+
+@media (max-width: 480px) {
+
+    #pomodoro-app .pm-page-title {
+        font-size: clamp(24px, 6vw, 30px);
+    }
+
+    #pomodoro-app .pm-page-description {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+}
+
+
+/* =====================================================
+   11. ACCESSIBILITY
+   ===================================================== */
+
+/* Giảm chuyển động khi người dùng yêu cầu */
+
+@media (prefers-reduced-motion: reduce) {
+
+    #pomodoro-app {
+        transition: none;
+    }
+
+}
+
+
+/* =====================================================
+   12. PRINT STYLES
+   ===================================================== */
+
+@media print {
+
+    #pomodoro-app {
+        color: #000000;
+        background: #FFFFFF;
+    }
+
+}

@@ -1,0 +1,204 @@
+
+<!-- =====================================================
+     POMODORO WORKSPACE 2.0
+     PRE-FOCUS V9 - PREMIUM MINIMAL
+
+     Layout:
+     - Task Setup: 50%
+     - Environment Setup: 50%
+
+     Behavior:
+     - Header không cuộn
+     - Body cuộn độc lập
+     - Chiều cao card linh hoạt, có giới hạn
+     - Background / Music xếp dọc
+     - Dropdown mở rộng trong body
+     - Không khóa Environment
+     ===================================================== -->
+
+<section
+    id="pm-pre-focus"
+    class="pm-pre-focus"
+    aria-labelledby="pm-pre-title"
+>
+
+    <!-- ==========================================
+         HEADER CHUNG CỦA PRE-FOCUS
+         ========================================== -->
+
+    <header class="pm-pre-header">
+
+        <div class="pm-pre-header-content">
+
+            <span class="pm-eyebrow">
+                <span
+                    class="pm-eyebrow-dot"
+                    aria-hidden="true"
+                ></span>
+                PRE-FOCUS
+            </span>
+
+            <h1 id="pm-pre-title">
+                Chuẩn bị phiên tập trung
+            </h1>
+
+            <p>
+                Một mục tiêu rõ ràng, một không gian phù hợp.
+                Hãy chuẩn bị cho phiên học của bạn.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- ==========================================
+         MAIN GRID - LAYOUT 1:1
+         ========================================== -->
+
+    <div class="pm-setup-grid">
+
+
+        <!-- ======================================
+             LAYOUT 1 - TASK SETUP
+             ====================================== -->
+
+        <article
+            id="pm-task-card"
+            class="pm-setup-card pm-task-card"
+            aria-labelledby="pm-task-heading"
+        >
+
+            <!-- PREMIUM MINIMAL HEADER -->
+
+            <header class="pm-card-header">
+
+                <div class="pm-card-header-main">
+
+                    <div class="pm-card-title-group">
+
+                        <h2 id="pm-task-heading">
+                            Thiết lập nhiệm vụ
+                        </h2>
+
+                        <p>
+                            Xác định mục tiêu cho phiên học.
+                        </p>
+
+                    </div>
+
+                    <div
+                        class="pm-card-header-symbol"
+                        aria-hidden="true"
+                    >
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+
+                </div>
+
+                <span
+                    class="pm-header-accent"
+                    aria-hidden="true"
+                ></span>
+
+            </header>
+
+
+            <!-- TASK BODY - INDEPENDENT SCROLL -->
+
+            <div class="pm-card-body pm-task-body">
+
+                {% include "planner/pomodoro/components/task_selector.html" %}
+
+            </div>
+
+        </article>
+
+
+        <!-- ======================================
+             LAYOUT 2 - ENVIRONMENT SETUP
+             ====================================== -->
+
+        <article
+            id="pm-environment-card"
+            class="pm-setup-card pm-environment-card"
+            aria-labelledby="pm-environment-heading"
+        >
+
+            <!-- PREMIUM MINIMAL HEADER -->
+
+            <header class="pm-card-header">
+
+                <div class="pm-card-header-main">
+
+                    <div class="pm-card-title-group">
+
+                        <h2 id="pm-environment-heading">
+                            Thiết lập không gian
+                        </h2>
+
+                        <p>
+                            Không gian dành riêng cho bạn.
+                        </p>
+
+                    </div>
+
+                    <div
+                        class="pm-card-header-symbol"
+                        aria-hidden="true"
+                    >
+                        <i class="fa-solid fa-headphones"></i>
+                    </div>
+
+                </div>
+
+                <span
+                    class="pm-header-accent"
+                    aria-hidden="true"
+                ></span>
+
+            </header>
+
+
+            <!-- ENVIRONMENT BODY - INDEPENDENT SCROLL -->
+
+            <div class="pm-card-body pm-environment-body">
+
+                <!-- BACKGROUND PICKER -->
+
+                <section
+                    class="pm-environment-column pm-background-column"
+                    aria-label="Chọn không gian hình ảnh"
+                >
+
+                    {% include "planner/pomodoro/components/background_picker.html" %}
+
+                </section>
+
+
+                <!-- HORIZONTAL SEPARATOR -->
+
+                <div
+                    class="pm-section-separator"
+                    aria-hidden="true"
+                ></div>
+
+
+                <!-- MUSIC PICKER -->
+
+                <section
+                    class="pm-environment-column pm-music-column"
+                    aria-label="Chọn âm nhạc tập trung"
+                >
+
+                    {% include "planner/pomodoro/components/music_picker.html" %}
+
+                </section>
+
+            </div>
+
+        </article>
+
+    </div>
+
+</section>

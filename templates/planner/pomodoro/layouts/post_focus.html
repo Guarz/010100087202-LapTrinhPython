@@ -1,0 +1,118 @@
+
+<!-- =====================================================
+     POMODORO WORKSPACE 2.0
+     POST-FOCUS DASHBOARD - TIMELINE V2
+
+     Giao diện:
+     01. Tiêu đề Post-Focus
+     02. Tổng quan học tập
+     03. Biểu đồ tần suất tập trung
+
+     Heatmap:
+     - Chỉ sử dụng một dạng Timeline
+     - Hiển thị theo tuần, nhóm theo tháng
+     - Thứ Hai đến Chủ nhật
+     - Số phút tập trung trong từng ô
+     - Tổng số phút theo từng cột tuần
+     - Cuộn ngang để xem lịch sử
+
+     Ngôn ngữ hiển thị: Tiếng Việt
+
+     Lưu ý:
+     - Không thay đổi Pre-Focus
+     - Không thay đổi In-Focus
+     - Không ảnh hưởng Celebration Sheet
+     ===================================================== -->
+
+
+<section
+    id="pm-post-focus"
+    class="pm-post-focus"
+    aria-labelledby="pm-post-title"
+>
+
+    <!-- =================================================
+         01. POST-FOCUS HEADER
+         ================================================= -->
+
+    <header class="pm-post-header">
+
+        <div class="pm-post-header-content">
+
+            <span class="pm-post-eyebrow">
+
+                <span
+                    class="pm-post-eyebrow-dot"
+                    aria-hidden="true"
+                ></span>
+
+                03 / SAU TẬP TRUNG
+
+            </span>
+
+            <h2 id="pm-post-title">
+                Hành trình tập trung
+            </h2>
+
+            <p>
+                Mỗi phiên học là một bước tiến.
+                Cùng nhìn lại thời gian và thói quen
+                tập trung của bạn.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================
+         02. POST-FOCUS DASHBOARD
+         ================================================= -->
+
+    <div class="pm-post-dashboard">
+
+        <!-- =============================================
+             A. TỔNG QUAN HỌC TẬP
+
+             Bao gồm:
+             - Tổng thời gian tập trung
+             - Tổng số phiên hoàn thành
+             - Chuỗi ngày tập trung
+
+             Giữ nguyên component hiện tại.
+             ============================================= -->
+
+        <div class="pm-post-statistics-section">
+
+            {% include "planner/pomodoro/components/streak_stats.html" %}
+
+        </div>
+
+
+        <!-- =============================================
+             B. TẦN SUẤT HỌC TẬP
+
+             Chỉ sử dụng một Heatmap Timeline.
+
+             Giao diện:
+             - Tiêu đề
+             - Chú giải màu
+             - Nhãn tháng
+             - Bảy hàng thứ trong tuần
+             - Các ô ngày chứa số phút
+             - Hàng tổng cộng theo tuần
+             - Thanh cuộn ngang
+
+             Phần này được triển khai độc lập
+             trong component heatmap.html.
+             ============================================= -->
+
+        <div class="pm-post-heatmap-section">
+
+            {% include "planner/pomodoro/components/heatmap.html" %}
+
+        </div>
+
+    </div>
+
+</section>

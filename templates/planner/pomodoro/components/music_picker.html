@@ -1,0 +1,90 @@
+
+<section class="pm-music-picker">
+
+    <div class="pm-section-top">
+        <div>
+            <h3 class="pm-section-label">
+                <i class="fa-solid fa-music"></i>
+                Âm nhạc tập trung
+            </h3>
+        </div>
+
+        <i class="fa-solid fa-headphones pm-section-icon"></i>
+    </div>
+
+    <!-- Dropdown trigger -->
+    <button type="button"
+            id="pm-music-trigger"
+            class="pm-picker-trigger"
+            aria-expanded="false"
+            aria-controls="pm-music-library">
+
+        <span id="pm-music-cover"
+              class="pm-music-cover">
+            <i class="fa-solid fa-music"></i>
+        </span>
+
+        <span class="pm-picker-info">
+            <strong id="pm-music-title">Midnight Lo-fi</strong>
+            <small id="pm-music-subtitle">
+                Lo-fi · Đã chọn
+            </small>
+        </span>
+
+        <i class="fa-solid fa-chevron-down pm-chevron"></i>
+
+    </button>
+
+    <!-- Music library -->
+    <div id="pm-music-library"
+         class="pm-music-library"
+         hidden>
+
+        <div id="pm-music-list" class="pm-music-list">
+            <!-- JavaScript sẽ tạo danh sách -->
+        </div>
+
+    </div>
+
+    <!-- Mini Player -->
+    <div id="pm-mini-player" class="pm-mini-player">
+
+        <button type="button"
+                id="pm-music-play"
+                class="pm-mini-play"
+                aria-label="Phát nhạc nghe thử">
+            <i class="fa-solid fa-play"></i>
+        </button>
+
+        <div class="pm-player-content">
+            <strong id="pm-player-title">Midnight Lo-fi</strong>
+
+            <div class="pm-progress-wrap">
+                <input type="range"
+                       id="pm-music-progress"
+                       class="pm-progress"
+                       min="0"
+                       max="100"
+                       value="0"
+                       step="0.1"
+                       aria-label="Vị trí phát nhạc"
+                       disabled>
+            </div>
+
+            <div class="pm-player-times">
+                <span id="pm-current-time">0:00</span>
+                <span id="pm-total-time">0:00</span>
+            </div>
+        </div>
+
+        <i class="fa-solid fa-volume-high pm-volume-icon"></i>
+
+    </div>
+
+    <p id="pm-music-message"
+       class="pm-helper"
+       role="status"
+       aria-live="polite">
+    </p>
+
+</section>

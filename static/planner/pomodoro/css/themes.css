@@ -1,0 +1,405 @@
+
+/* =====================================================
+   POMODORO WORKSPACE 2.0 - THEMES
+   Theme: AARHUSIAN SKY / WHITE CHALK
+
+   Scope: #pomodoro-app
+   Requires: variables.css
+
+   Purpose:
+   - Semantic theme colors
+   - Component color variants
+   - Focus state
+   - Interactive states
+   - Accessibility
+   ===================================================== */
+
+
+/* =====================================================
+   1. DEFAULT THEME
+   ===================================================== */
+
+#pomodoro-app {
+
+    /* Brand */
+    --pm-theme-primary: var(--pm-primary);
+    --pm-theme-primary-hover: var(--pm-blue-80);
+    --pm-theme-primary-active: var(--pm-blue-70);
+
+    /* Background */
+    --pm-theme-background: var(--pm-cream);
+    --pm-theme-surface: var(--pm-cream-t90);
+    --pm-theme-surface-soft: var(--pm-cream-t30);
+
+    /* Text */
+    --pm-theme-heading: var(--pm-cream-s90);
+    --pm-theme-body: var(--pm-cream-s80);
+    --pm-theme-muted: var(--pm-cream-s60);
+
+    /* Border */
+    --pm-theme-border: var(--pm-cream-s10);
+    --pm-theme-border-focus: var(--pm-primary);
+
+    /* Highlights */
+    --pm-theme-highlight: var(--pm-blue-t90);
+    --pm-theme-highlight-strong: var(--pm-blue-t80);
+
+    /* Interaction */
+    --pm-theme-disabled-bg: var(--pm-cream-s10);
+    --pm-theme-disabled-text: var(--pm-cream-s50);
+
+    /* Focus ring */
+    --pm-theme-focus-ring: rgba(1, 75, 170, 0.22);
+
+    color: var(--pm-theme-heading);
+    background-color: var(--pm-theme-background);
+}
+
+
+/* =====================================================
+   2. LIGHT THEME
+   Optional: class="pm-theme-light"
+   ===================================================== */
+
+#pomodoro-app.pm-theme-light {
+    --pm-theme-background: var(--pm-cream);
+    --pm-theme-surface: var(--pm-cream-t90);
+    --pm-theme-surface-soft: var(--pm-cream-t30);
+
+    --pm-theme-heading: var(--pm-cream-s90);
+    --pm-theme-body: var(--pm-cream-s80);
+    --pm-theme-muted: var(--pm-cream-s60);
+
+    --pm-theme-border: var(--pm-cream-s10);
+}
+
+
+/* =====================================================
+   3. SOFT BLUE THEME
+   Optional: class="pm-theme-soft"
+   ===================================================== */
+
+#pomodoro-app.pm-theme-soft {
+    --pm-theme-background: var(--pm-blue-t90);
+    --pm-theme-surface: var(--pm-cream-t90);
+    --pm-theme-surface-soft: var(--pm-blue-t90);
+
+    --pm-theme-heading: var(--pm-blue-30);
+    --pm-theme-body: var(--pm-blue-40);
+    --pm-theme-muted: var(--pm-blue-60);
+
+    --pm-theme-border: var(--pm-blue-t80);
+}
+
+
+/* =====================================================
+   4. FOCUS THEME
+   Optional: class="pm-theme-focus"
+   ===================================================== */
+
+#pomodoro-app.pm-theme-focus {
+    --pm-theme-background: var(--pm-blue-40);
+    --pm-theme-surface: var(--pm-blue-30);
+    --pm-theme-surface-soft: var(--pm-blue-50);
+
+    --pm-theme-heading: var(--pm-cream-t90);
+    --pm-theme-body: var(--pm-blue-t90);
+    --pm-theme-muted: var(--pm-blue-t70);
+
+    --pm-theme-border: var(--pm-blue-50);
+    --pm-theme-highlight: var(--pm-blue-50);
+
+    --pm-theme-focus-ring: rgba(204, 219, 238, 0.45);
+
+    color: var(--pm-theme-heading);
+}
+
+
+/* =====================================================
+   5. THEME APPLICATION
+   ===================================================== */
+
+/* Main surfaces */
+#pomodoro-app .pm-theme-surface {
+    background: var(--pm-theme-surface);
+    color: var(--pm-theme-heading);
+    border: 1px solid var(--pm-theme-border);
+}
+
+/* Muted surfaces */
+#pomodoro-app .pm-theme-surface-soft {
+    background: var(--pm-theme-surface-soft);
+    color: var(--pm-theme-body);
+}
+
+/* Typography */
+#pomodoro-app .pm-theme-heading {
+    color: var(--pm-theme-heading);
+}
+
+#pomodoro-app .pm-theme-text {
+    color: var(--pm-theme-body);
+}
+
+#pomodoro-app .pm-theme-muted {
+    color: var(--pm-theme-muted);
+}
+
+/* Theme border */
+#pomodoro-app .pm-theme-border {
+    border-color: var(--pm-theme-border);
+}
+
+
+/* =====================================================
+   6. BUTTON COLOR VARIANTS
+   Apply classes to existing buttons
+   ===================================================== */
+
+/* Primary */
+#pomodoro-app .pm-btn-primary {
+    background: var(--pm-theme-primary);
+    color: #FFFFFF;
+    border: 1px solid transparent;
+    transition:
+        background var(--pm-transition-fast),
+        box-shadow var(--pm-transition-fast);
+}
+
+#pomodoro-app .pm-btn-primary:hover:not(:disabled) {
+    background: var(--pm-theme-primary-hover);
+}
+
+#pomodoro-app .pm-btn-primary:active:not(:disabled) {
+    background: var(--pm-theme-primary-active);
+}
+
+/* Secondary */
+#pomodoro-app .pm-btn-secondary {
+    background: var(--pm-blue-t90);
+    color: var(--pm-primary);
+    border: 1px solid var(--pm-blue-t80);
+}
+
+#pomodoro-app .pm-btn-secondary:hover:not(:disabled) {
+    background: var(--pm-blue-t80);
+}
+
+/* Outline */
+#pomodoro-app .pm-btn-outline {
+    background: transparent;
+    color: var(--pm-primary);
+    border: 1px solid var(--pm-blue-t60);
+}
+
+#pomodoro-app .pm-btn-outline:hover:not(:disabled) {
+    background: var(--pm-blue-t90);
+}
+
+/* Ghost */
+#pomodoro-app .pm-btn-ghost {
+    background: transparent;
+    color: var(--pm-primary);
+    border: 1px solid transparent;
+}
+
+#pomodoro-app .pm-btn-ghost:hover:not(:disabled) {
+    background: var(--pm-blue-t90);
+}
+
+
+/* =====================================================
+   7. STATUS COLORS
+   Using only the two-color palette
+   ===================================================== */
+
+/* Ready */
+#pomodoro-app .pm-status-ready {
+    background: var(--pm-blue-t90);
+    color: var(--pm-blue-70);
+    border: 1px solid var(--pm-blue-t80);
+}
+
+/* Focusing */
+#pomodoro-app .pm-status-focusing {
+    background: var(--pm-primary);
+    color: #FFFFFF;
+    border: 1px solid var(--pm-primary);
+}
+
+/* Paused */
+#pomodoro-app .pm-status-paused {
+    background: var(--pm-cream-t30);
+    color: var(--pm-cream-s80);
+    border: 1px solid var(--pm-cream-s20);
+}
+
+/* Completed */
+#pomodoro-app .pm-status-completed {
+    background: var(--pm-blue-t80);
+    color: var(--pm-blue-40);
+    border: 1px solid var(--pm-blue-t60);
+}
+
+
+/* =====================================================
+   8. SELECTION & INTERACTIVE STATES
+   ===================================================== */
+
+/* Selected items */
+#pomodoro-app .pm-is-selected {
+    background: var(--pm-blue-t90);
+    border-color: var(--pm-primary);
+    color: var(--pm-blue-40);
+}
+
+/* Hoverable elements */
+#pomodoro-app .pm-theme-hoverable {
+    transition:
+        background var(--pm-transition-fast),
+        border-color var(--pm-transition-fast);
+}
+
+#pomodoro-app .pm-theme-hoverable:hover {
+    background: var(--pm-blue-t90);
+    border-color: var(--pm-blue-t60);
+}
+
+/* Disabled buttons */
+#pomodoro-app button:disabled,
+#pomodoro-app .pm-is-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* Keyboard focus */
+#pomodoro-app :is(
+    button,
+    input,
+    select,
+    textarea,
+    a,
+    [tabindex]
+):focus-visible {
+    outline: 2px solid var(--pm-primary);
+    outline-offset: 3px;
+}
+
+
+/* =====================================================
+   9. FORM CONTROL THEME
+   ===================================================== */
+
+#pomodoro-app .pm-theme-input {
+    background: var(--pm-theme-surface);
+    color: var(--pm-theme-heading);
+    border: 1px solid var(--pm-theme-border);
+    border-radius: var(--pm-radius-sm);
+
+    transition:
+        border-color var(--pm-transition-fast),
+        box-shadow var(--pm-transition-fast);
+}
+
+#pomodoro-app .pm-theme-input:hover:not(:disabled) {
+    border-color: var(--pm-blue-t50);
+}
+
+#pomodoro-app .pm-theme-input:focus {
+    border-color: var(--pm-primary);
+    outline: none;
+    box-shadow:
+        0 0 0 3px var(--pm-theme-focus-ring);
+}
+
+#pomodoro-app .pm-theme-input::placeholder {
+    color: var(--pm-cream-s50);
+}
+
+
+/* =====================================================
+   10. PROGRESS & TIMER THEME
+   ===================================================== */
+
+#pomodoro-app .pm-theme-progress {
+    background: var(--pm-blue-t90);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+#pomodoro-app .pm-theme-progress-fill {
+    height: 100%;
+    background: var(--pm-primary);
+    border-radius: inherit;
+    transition: width var(--pm-transition-normal);
+}
+
+/* Timer colors */
+#pomodoro-app .pm-theme-timer {
+    color: var(--pm-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* =====================================================
+   11. DARK FOCUS OVERRIDES
+   ===================================================== */
+
+#pomodoro-app.pm-theme-focus .pm-theme-timer {
+    color: var(--pm-cream-t90);
+}
+
+#pomodoro-app.pm-theme-focus .pm-theme-progress {
+    background: var(--pm-blue-50);
+}
+
+#pomodoro-app.pm-theme-focus .pm-theme-progress-fill {
+    background: var(--pm-blue-t50);
+}
+
+#pomodoro-app.pm-theme-focus .pm-theme-input {
+    background: var(--pm-blue-30);
+    color: var(--pm-cream-t90);
+    border-color: var(--pm-blue-50);
+}
+
+#pomodoro-app.pm-theme-focus .pm-theme-input::placeholder {
+    color: var(--pm-blue-t70);
+}
+
+#pomodoro-app.pm-theme-focus .pm-btn-secondary,
+#pomodoro-app.pm-theme-focus .pm-btn-outline,
+#pomodoro-app.pm-theme-focus .pm-btn-ghost {
+    color: var(--pm-cream-t90);
+    border-color: var(--pm-blue-t30);
+}
+
+#pomodoro-app.pm-theme-focus .pm-btn-secondary {
+    background: var(--pm-blue-50);
+}
+
+#pomodoro-app.pm-theme-focus .pm-btn-secondary:hover:not(:disabled),
+#pomodoro-app.pm-theme-focus .pm-btn-outline:hover:not(:disabled),
+#pomodoro-app.pm-theme-focus .pm-btn-ghost:hover:not(:disabled) {
+    background: var(--pm-blue-50);
+}
+
+#pomodoro-app.pm-theme-focus
+:is(button, input, select, textarea, a, [tabindex]):focus-visible {
+    outline-color: var(--pm-blue-t60);
+}
+
+
+/* =====================================================
+   12. REDUCED MOTION
+   ===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    #pomodoro-app .pm-btn-primary,
+    #pomodoro-app .pm-theme-hoverable,
+    #pomodoro-app .pm-theme-input,
+    #pomodoro-app .pm-theme-progress-fill {
+        transition: none;
+    }
+}

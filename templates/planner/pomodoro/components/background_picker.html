@@ -1,0 +1,151 @@
+
+<!-- =====================================================
+     POMODORO WORKSPACE 2.0
+     BACKGROUND PICKER V2
+     REAL IMAGE LIBRARY
+     ===================================================== -->
+
+<section class="pm-background-picker">
+
+    <div class="pm-section-top">
+        <div>
+
+            <h3 class="pm-section-label">
+                <i
+                    class="fa-regular fa-image"
+                    aria-hidden="true"
+                ></i>
+                Không gian hình ảnh
+            </h3>
+
+            <p class="pm-helper">
+                Chọn cảnh nền hiển thị khi bắt đầu tập trung.
+            </p>
+
+        </div>
+    </div>
+
+
+    <!-- HÌNH NỀN ĐÃ CHỌN -->
+
+    <button
+        type="button"
+        id="pm-background-trigger"
+        class="pm-picker-trigger"
+        aria-expanded="false"
+        aria-controls="pm-background-library"
+        data-background-id="cozy-city-night"
+        data-background-type="image"
+    >
+
+        <span
+            id="pm-bg-selected-thumb"
+            class="pm-bg-selected-thumb"
+            aria-hidden="true"
+        >
+            <i class="fa-regular fa-image"></i>
+        </span>
+
+        <span class="pm-picker-info">
+
+            <strong id="pm-bg-selected-name">
+                Cozy City Night
+            </strong>
+
+            <small id="pm-bg-selected-type">
+                Ảnh tĩnh · Đã chọn
+            </small>
+
+        </span>
+
+        <i
+            class="fa-solid fa-chevron-down pm-chevron"
+            aria-hidden="true"
+        ></i>
+
+    </button>
+
+
+    <!-- THƯ VIỆN HÌNH NỀN -->
+
+    <div
+        id="pm-background-library"
+        class="pm-dropdown-library"
+        hidden
+    >
+
+        <div class="pm-library-header">
+
+            <strong>Thư viện không gian</strong>
+
+            <span id="pm-bg-count">
+                6 không gian
+            </span>
+
+        </div>
+
+
+        <!-- BỘ LỌC -->
+
+        <div
+            class="pm-filter-bar"
+            role="group"
+            aria-label="Lọc loại hình nền"
+        >
+
+            <button
+                type="button"
+                class="pm-filter-btn is-active"
+                data-filter="all"
+                aria-pressed="true"
+            >
+                Tất cả
+            </button>
+
+            <button
+                type="button"
+                class="pm-filter-btn"
+                data-filter="image"
+                aria-pressed="false"
+            >
+                Ảnh tĩnh
+            </button>
+
+            <button
+                type="button"
+                class="pm-filter-btn"
+                data-filter="animated"
+                aria-pressed="false"
+            >
+                Ảnh động
+            </button>
+
+            <button
+                type="button"
+                class="pm-filter-btn"
+                data-filter="video"
+                aria-pressed="false"
+            >
+                Video nền
+            </button>
+
+        </div>
+
+
+        <!-- JAVASCRIPT RENDER GALLERY -->
+
+        <div
+            id="pm-background-grid"
+            class="pm-background-grid"
+        >
+            <!-- 6 ảnh được render từ background-data.js -->
+        </div>
+
+    </div>
+
+
+    <p class="pm-helper">
+        Không gian được chọn sẽ sử dụng trong Active Focus.
+    </p>
+
+</section>

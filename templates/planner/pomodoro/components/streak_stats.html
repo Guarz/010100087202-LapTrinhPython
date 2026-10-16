@@ -1,0 +1,196 @@
+
+<!-- =====================================================
+     POMODORO WORKSPACE 2.0
+     STREAK & STATISTICS V3 - MINIMAL
+
+     - Không sử dụng nhãn trên đầu card.
+     - Icon nằm góc trên bên phải.
+     - Giá trị và mô tả nằm phía dưới.
+     - Giữ nguyên ID dữ liệu cho Backend.
+
+     Theme:
+     Time     : Aarhusian Sky
+     Sessions : Grass Green
+     Streak   : Liquid Lava
+     ===================================================== -->
+
+<section
+    id="pm-streak-stats"
+    class="pm-streak-stats"
+    aria-labelledby="pm-stats-title"
+>
+
+    <!-- =============================================
+         01. HEADER
+         ============================================= -->
+
+    <header class="pm-stats-header">
+
+        <div class="pm-stats-heading">
+
+            <h3 id="pm-stats-title">
+                Tổng quan học tập
+            </h3>
+
+            <p>
+                Những con số được tích lũy từ
+                các phiên tập trung của bạn.
+            </p>
+
+        </div>
+
+        <span class="pm-stats-period">
+            Tất cả thời gian
+        </span>
+
+    </header>
+
+
+    <!-- =============================================
+         02. STATISTICS GRID
+         ============================================= -->
+
+    <div class="pm-stats-grid">
+
+        <!-- A. TOTAL FOCUS TIME -->
+
+        <article class="pm-stat-card pm-stat-card--minutes">
+
+            <div class="pm-stat-card-header">
+
+                <span
+                    class="pm-stat-icon"
+                    aria-hidden="true"
+                >
+                    <i class="fa-regular fa-clock"></i>
+                </span>
+
+            </div>
+
+            <div class="pm-stat-card-body">
+
+                <div class="pm-stat-value-row">
+
+                    <strong
+                        id="pm-stat-total-minutes"
+                        class="pm-stat-value"
+                    >
+                        0
+                    </strong>
+
+                    <span class="pm-stat-unit">
+                        phút
+                    </span>
+
+                </div>
+
+                <p class="pm-stat-label">
+                    Tổng thời gian tập trung
+                </p>
+
+            </div>
+
+        </article>
+
+
+        <!-- B. COMPLETED SESSIONS -->
+
+        <article class="pm-stat-card pm-stat-card--sessions">
+
+            <div class="pm-stat-card-header">
+
+                <span
+                    class="pm-stat-icon"
+                    aria-hidden="true"
+                >
+                    <i class="fa-solid fa-circle-check"></i>
+                </span>
+
+            </div>
+
+            <div class="pm-stat-card-body">
+
+                <div class="pm-stat-value-row">
+
+                    <strong
+                        id="pm-stat-completed-sessions"
+                        class="pm-stat-value"
+                    >
+                        0
+                    </strong>
+
+                    <span class="pm-stat-unit">
+                        phiên
+                    </span>
+
+                </div>
+
+                <p class="pm-stat-label">
+                    Phiên đã hoàn thành
+                </p>
+
+            </div>
+
+        </article>
+
+
+        <!-- C. CURRENT STREAK -->
+
+        <article class="pm-stat-card pm-stat-card--streak">
+
+            <div class="pm-stat-card-header">
+
+                <span
+                    class="pm-stat-icon"
+                    aria-hidden="true"
+                >
+                    <i class="fa-solid fa-fire-flame-curved"></i>
+                </span>
+
+            </div>
+
+            <div class="pm-stat-card-body">
+
+                <div class="pm-stat-value-row">
+
+                    <strong
+                        id="pm-stat-current-streak"
+                        class="pm-stat-value"
+                    >
+                        0
+                    </strong>
+
+                    <span class="pm-stat-unit">
+                        ngày
+                    </span>
+
+                </div>
+
+                <p class="pm-stat-label">
+                    Chuỗi ngày tập trung
+                </p>
+
+            </div>
+
+        </article>
+
+    </div>
+
+
+    <!-- =============================================
+         03. NOTE
+         ============================================= -->
+
+    <p class="pm-stats-note">
+
+        <i
+            class="fa-solid fa-circle-info"
+            aria-hidden="true"
+        ></i>
+
+        Chỉ những phiên tập trung hoàn thành mới được
+        tính vào tiến độ học tập.
+
+    </p>
+
+</section>

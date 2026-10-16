@@ -1,0 +1,1242 @@
+/* =====================================================
+   POMODORO WORKSPACE 2.0
+   IN-FOCUS V2.1 - PREMIUM MINIMAL
+
+   - Compact Preview
+   - 5 / 15 / 25 / Custom 1-180 minutes
+   - Compact Inline Custom Duration
+   - Active Focus Fullscreen
+   - Adaptive Contrast White / Black
+   - Global Pause / Resume Controls
+   - Music / Exit
+   - Confirmation Dialog
+   - Responsive
+
+   Theme:
+   Blue: #014BAA
+   Red:  #D21624
+   Cream: #F8F3F0
+
+   Scope: #pomodoro-app
+   ===================================================== */
+
+
+/* =====================================================
+   01. BASE
+   ===================================================== */
+
+#pomodoro-app .pm-in-focus {
+    width: 100%;
+    min-width: 0;
+    margin: 40px 0 0;
+    padding: 0;
+    background: transparent;
+}
+
+#pomodoro-app .pm-in-focus *,
+#pomodoro-app .pm-focus-screen *,
+#pomodoro-app .pm-focus-exit-dialog * {
+    box-sizing: border-box;
+}
+
+#pomodoro-app .pm-in-focus [hidden],
+#pomodoro-app .pm-focus-screen [hidden],
+#pomodoro-app .pm-focus-exit-dialog [hidden] {
+    display: none !important;
+}
+
+
+/* =====================================================
+   02. SECTION HEADER
+   ===================================================== */
+
+#pomodoro-app .pm-in-header {
+    margin-bottom: 24px;
+}
+
+#pomodoro-app .pm-in-header-content {
+    max-width: 760px;
+}
+
+#pomodoro-app .pm-in-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--pm-blue, #014BAA);
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: 1.2px;
+}
+
+#pomodoro-app .pm-in-eyebrow-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    flex: 0 0 auto;
+    background: var(--pm-red, #D21624);
+    border-radius: 50%;
+}
+
+#pomodoro-app .pm-in-header h2 {
+    margin: 10px 0 8px;
+    color: var(
+        --pm-theme-heading,
+        var(--pm-text-primary, #191818)
+    );
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 750;
+    line-height: 1.22;
+    letter-spacing: -0.035em;
+}
+
+#pomodoro-app .pm-in-header p {
+    margin: 0;
+    color: var(
+        --pm-theme-muted,
+        var(--pm-text-secondary, #636160)
+    );
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+
+/* =====================================================
+   03. COMPACT PREVIEW CARD
+   ===================================================== */
+
+#pomodoro-app .pm-focus-preview {
+    width: 100%;
+    min-width: 0;
+    height: fit-content;
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+
+    background: var(--pm-surface, #FFFFFF);
+    border: 1px solid var(--pm-border, #DFDBD8);
+    border-radius: 24px;
+
+    box-shadow: 0 2px 12px rgba(0, 30, 68, .045);
+}
+
+#pomodoro-app .pm-focus-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px 7px;
+}
+
+#pomodoro-app .pm-focus-preview-heading {
+    flex: 1;
+    min-width: 0;
+}
+
+#pomodoro-app .pm-focus-preview-heading h3 {
+    margin: 0;
+    color: var(--pm-blue, #014BAA);
+    font-size: 16px;
+    font-weight: 750;
+    letter-spacing: -.02em;
+}
+
+#pomodoro-app .pm-focus-preview-heading p {
+    margin: 3px 0 0;
+    color: var(--pm-text-secondary, #636160);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+#pomodoro-app .pm-focus-preview-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    color: var(--pm-blue, #014BAA);
+    font-size: 21px;
+}
+
+#pomodoro-app .pm-focus-header-accent {
+    display: block;
+    width: 36px;
+    height: 2px;
+    margin: 3px 20px 11px;
+    background: var(--pm-blue, #014BAA);
+    border-radius: 999px;
+}
+
+#pomodoro-app .pm-focus-preview-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px 20px 18px;
+    border-top: 1px solid var(--pm-border, #DFDBD8);
+}
+
+
+/* =====================================================
+   04. DURATION SELECTOR
+   ===================================================== */
+
+#pomodoro-app .pm-focus-duration-section {
+    width: 100%;
+    min-width: 0;
+}
+
+#pomodoro-app .pm-focus-field-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 9px;
+    color: var(--pm-text-primary, #242A32);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#pomodoro-app .pm-focus-field-label i {
+    color: var(--pm-blue, #014BAA);
+}
+
+#pomodoro-app .pm-focus-duration-options {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+#pomodoro-app .pm-focus-duration-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-width: 0;
+    min-height: 40px;
+    padding: 8px 10px;
+
+    background: #FFFFFF;
+    color: var(--pm-text-primary, #242A32);
+
+    border: 1px solid var(--pm-border, #DFDBD8);
+    border-radius: 9px;
+
+    font: inherit;
+    font-size: 12px;
+    font-weight: 650;
+    cursor: pointer;
+
+    transition:
+        background 170ms ease,
+        color 170ms ease,
+        border-color 170ms ease,
+        box-shadow 170ms ease;
+}
+
+#pomodoro-app .pm-focus-duration-btn:hover:not(.is-selected):not([aria-pressed="true"]) {
+    background: #F6F9FD;
+    border-color: var(--pm-blue, #014BAA);
+}
+
+#pomodoro-app .pm-focus-duration-btn.is-selected,
+#pomodoro-app .pm-focus-duration-btn[aria-pressed="true"] {
+    background: var(--pm-blue, #014BAA);
+    color: #FFFFFF;
+    border-color: var(--pm-blue, #014BAA);
+    box-shadow: 0 3px 10px rgba(1, 75, 170, .12);
+}
+
+
+/* =====================================================
+   05. COMPACT INLINE CUSTOM DURATION
+
+   [Thời gian tùy chỉnh]        [30] phút
+   [Từ 1 đến 180 phút]
+
+   ===================================================== */
+
+#pomodoro-app .pm-focus-custom-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    gap: 12px 16px;
+    width: 100%;
+    min-width: 0;
+    margin-top: 10px;
+    padding: 12px 16px;
+
+    background: #F6F9FD;
+    border: 1px solid #D7E3F2;
+    border-radius: 11px;
+}
+
+#pomodoro-app .pm-focus-custom-field[hidden] {
+    display: none !important;
+}
+
+#pomodoro-app .pm-focus-custom-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 140px;
+    gap: 4px;
+}
+
+#pomodoro-app .pm-focus-custom-info label {
+    display: block;
+    margin: 0;
+    color: #242A32;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+#pomodoro-app .pm-focus-custom-info p {
+    margin: 0;
+    color: #626A73;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+#pomodoro-app .pm-focus-custom-input-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 0 0 auto;
+    min-width: 0;
+    gap: 10px;
+}
+
+#pomodoro-app .pm-focus-custom-input-row input {
+    width: 84px;
+    height: 38px;
+    min-height: 38px;
+    padding: 7px 10px;
+
+    background: #FFFFFF;
+    color: #242A32;
+
+    border: 1px solid #C7D7EB;
+    border-radius: 9px;
+
+    font: inherit;
+    font-size: 14px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+
+    appearance: textfield;
+    -moz-appearance: textfield;
+
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease;
+}
+
+#pomodoro-app .pm-focus-custom-input-row input::-webkit-inner-spin-button,
+#pomodoro-app .pm-focus-custom-input-row input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#pomodoro-app .pm-focus-custom-input-row input:hover {
+    border-color: #99B7DD;
+}
+
+#pomodoro-app .pm-focus-custom-input-row input:focus {
+    outline: none;
+    border-color: #014BAA;
+    box-shadow: 0 0 0 3px rgba(1, 75, 170, .10);
+}
+
+#pomodoro-app .pm-focus-custom-input-row span {
+    color: #626A73;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+
+/* =====================================================
+   06. PREVIEW DIVIDER
+   ===================================================== */
+
+#pomodoro-app .pm-focus-preview-divider {
+    display: block;
+    width: 100%;
+    height: 1px;
+    flex-shrink: 0;
+    background: var(--pm-border, #DFDBD8);
+}
+
+
+/* =====================================================
+   07. TIMER PREVIEW
+   ===================================================== */
+
+#pomodoro-app .pm-focus-timer-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 0;
+    text-align: center;
+}
+
+#pomodoro-app .pm-focus-timer-caption {
+    color: var(--pm-blue, #014BAA);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 1.5px;
+}
+
+#pomodoro-app .pm-focus-preview-time {
+    color: var(--pm-text-primary, #191818);
+    font-size: clamp(52px, 6vw, 72px);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -.055em;
+    font-variant-numeric: tabular-nums;
+}
+
+#pomodoro-app .pm-focus-preview-caption {
+    max-width: 400px;
+    margin: 0;
+    color: var(--pm-text-secondary, #636160);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+
+/* =====================================================
+   08. CURRENT TASK SUMMARY
+   ===================================================== */
+
+#pomodoro-app .pm-focus-task-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 12px;
+
+    background: #F5F8FC;
+    border: 1px solid #DCE7F4;
+    border-radius: 10px;
+}
+
+#pomodoro-app .pm-focus-task-summary-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    width: 34px;
+    height: 34px;
+
+    background: #E6EDF7;
+    color: var(--pm-blue, #014BAA);
+    border-radius: 8px;
+}
+
+#pomodoro-app .pm-focus-task-summary-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 3px;
+}
+
+#pomodoro-app .pm-focus-task-summary-text small {
+    color: var(--pm-blue, #014BAA);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: .8px;
+}
+
+#pomodoro-app .pm-focus-task-summary-text strong {
+    color: #242A32;
+    font-size: 12px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+#pomodoro-app .pm-focus-task-check {
+    color: var(--pm-blue, #014BAA);
+    font-size: 16px;
+}
+
+
+/* =====================================================
+   09. START FOCUS BUTTON
+   ===================================================== */
+
+#pomodoro-app .pm-focus-start-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 14px;
+
+    background: var(--pm-blue, #014BAA);
+    color: #FFFFFF;
+
+    border: 1px solid var(--pm-blue, #014BAA);
+    border-radius: 10px;
+
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+
+    transition:
+        background 170ms ease,
+        transform 170ms ease,
+        opacity 170ms ease;
+}
+
+#pomodoro-app .pm-focus-start-btn:hover:not(:disabled) {
+    background: #013C88;
+    transform: translateY(-1px);
+}
+
+#pomodoro-app .pm-focus-start-btn:disabled {
+    background: #D7DCE4;
+    border-color: #D7DCE4;
+    color: #78818F;
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+#pomodoro-app .pm-focus-start-hint {
+    margin: -7px 0 0;
+    color: var(--pm-text-secondary, #636160);
+    font-size: 11px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+
+/* =====================================================
+   10. ACTIVE FOCUS SCREEN
+   ===================================================== */
+
+#pomodoro-app .pm-focus-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+
+    width: 100%;
+    height: 100dvh;
+
+    overflow: hidden;
+    isolation: isolate;
+    background: #172A42;
+}
+
+#pomodoro-app .pm-focus-screen:not(.is-open):not(:fullscreen) {
+    display: none;
+}
+
+#pomodoro-app .pm-focus-screen.is-open,
+#pomodoro-app .pm-focus-screen:fullscreen {
+    display: block;
+}
+
+#pomodoro-app .pm-focus-screen:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+}
+
+
+/* =====================================================
+   11. BACKGROUND LAYERS
+   ===================================================== */
+
+#pomodoro-app .pm-focus-background {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+#pomodoro-app .pm-focus-background-image,
+#pomodoro-app .pm-focus-background-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#pomodoro-app .pm-focus-background-image {
+    background:
+        radial-gradient(
+            circle at 75% 30%,
+            rgba(125,185,221,.45),
+            transparent 36%
+        ),
+        linear-gradient(
+            145deg,
+            #13263F 0%,
+            #234867 50%,
+            #527D97 100%
+        );
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+#pomodoro-app .pm-focus-background-video {
+    border: 0;
+}
+
+
+/* =====================================================
+   12. ADAPTIVE CONTRAST SYSTEM
+
+   LIGHT: White Timer / Controls
+   DARK:  Black Timer / Controls
+   ===================================================== */
+
+#pomodoro-app .pm-focus-screen {
+    --focus-foreground: #FFFFFF;
+    --focus-secondary: rgba(255,255,255,.78);
+    --focus-border: rgba(255,255,255,.74);
+    --focus-hover: rgba(255,255,255,.15);
+    --focus-panel: rgba(10,20,34,.28);
+    --focus-overlay: rgba(5,14,29,.28);
+    --focus-dot: #FFFFFF;
+}
+
+#pomodoro-app .pm-focus-screen[data-contrast="dark"] {
+    --focus-foreground: #171717;
+    --focus-secondary: rgba(23,23,23,.77);
+    --focus-border: rgba(23,23,23,.68);
+    --focus-hover: rgba(23,23,23,.11);
+    --focus-panel: rgba(255,255,255,.40);
+    --focus-overlay: rgba(255,255,255,.30);
+    --focus-dot: #171717;
+}
+
+#pomodoro-app .pm-focus-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: var(--focus-overlay);
+    pointer-events: none;
+    transition: background 180ms ease;
+}
+
+#pomodoro-app .pm-focus-screen-content {
+    position: relative;
+    z-index: 2;
+
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+
+    padding: clamp(20px, 3vw, 42px);
+    overflow-y: auto;
+
+    color: var(--focus-foreground);
+}
+
+
+/* =====================================================
+   13. FULLSCREEN HEADER
+   ===================================================== */
+
+#pomodoro-app .pm-focus-screen-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    flex: 0 0 auto;
+}
+
+#pomodoro-app .pm-focus-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--focus-foreground);
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: 2px;
+}
+
+#pomodoro-app .pm-focus-brand-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--focus-dot);
+    border-radius: 50%;
+}
+
+
+/* =====================================================
+   14. WHITE / BLACK MODE SWITCH
+   ===================================================== */
+
+#pomodoro-app .pm-focus-contrast-switch {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+
+    background: var(--focus-panel);
+    border: 1px solid var(--focus-border);
+    border-radius: 999px;
+    backdrop-filter: blur(10px);
+}
+
+#pomodoro-app .pm-focus-contrast-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    min-height: 34px;
+    padding: 7px 12px;
+
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 999px;
+
+    color: var(--focus-foreground);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+#pomodoro-app .pm-focus-contrast-btn:hover {
+    background: var(--focus-hover);
+}
+
+#pomodoro-app .pm-focus-contrast-btn.is-selected,
+#pomodoro-app .pm-focus-contrast-btn[aria-pressed="true"] {
+    background: var(--focus-hover);
+    border-color: var(--focus-border);
+}
+
+
+/* =====================================================
+   15. ACTIVE FOCUS CENTER - TIMER SCALE FIX
+   ===================================================== */
+
+#pomodoro-app .pm-focus-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    flex: 1 1 auto;
+    min-height: 340px;
+
+    gap: clamp(17px, 3vh, 32px);
+    padding: 35px 15px;
+
+    text-align: center;
+}
+
+#pomodoro-app .pm-focus-active-task {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    max-width: 680px;
+}
+
+#pomodoro-app .pm-focus-active-eyebrow {
+    color: var(--focus-secondary);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 2px;
+}
+
+#pomodoro-app .pm-focus-active-task h2 {
+    margin: 0;
+    color: var(--focus-foreground);
+    font-size: clamp(17px, 2vw, 24px);
+    font-weight: 600;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+#pomodoro-app .pm-focus-active-time {
+    color: var(--focus-foreground);
+    /* Không còn quá lớn trên màn hình desktop */
+    font-size: clamp(76px, 11vw, 152px);
+
+    font-weight: 500;
+    line-height: 1;
+
+    /* Không kéo các chữ số dính vào nhau */
+    letter-spacing: 0.008em;
+
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    white-space: nowrap;
+    max-width: 100%;
+    text-align: center;
+    text-shadow: 0 2px 18px rgba(0,0,0,.06);
+    user-select: none;
+}
+
+#pomodoro-app .pm-focus-active-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--focus-secondary);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+#pomodoro-app .pm-focus-status-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--focus-dot);
+    border-radius: 50%;
+}
+
+
+/* =====================================================
+   16. GLOBAL PAUSE / RESUME
+   ===================================================== */
+
+#pomodoro-app .pm-focus-primary-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+
+#pomodoro-app .pm-focus-control {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+
+    padding: 12px 20px;
+
+    background: var(--focus-panel);
+    color: var(--focus-foreground);
+    border: 1px solid var(--focus-border);
+    border-radius: 12px;
+
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+
+    transition:
+        background 170ms ease,
+        transform 170ms ease,
+        border-color 170ms ease;
+}
+
+#pomodoro-app .pm-focus-control i,
+#pomodoro-app .pm-focus-control span {
+    color: inherit;
+}
+
+#pomodoro-app .pm-focus-control:hover {
+    background: var(--focus-hover);
+    transform: translateY(-1px);
+}
+
+#pomodoro-app .pm-focus-control:active {
+    transform: translateY(0);
+}
+
+#pomodoro-app .pm-focus-main-control {
+    min-width: 178px;
+    min-height: 54px;
+    border-radius: 999px;
+    font-size: 15px;
+}
+
+#pomodoro-app .pm-focus-main-control i {
+    font-size: 16px;
+}
+
+
+/* =====================================================
+   17. FOCUS FOOTER
+   ===================================================== */
+
+#pomodoro-app .pm-focus-screen-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    flex: 0 0 auto;
+}
+
+#pomodoro-app .pm-focus-music {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+#pomodoro-app .pm-focus-music-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+#pomodoro-app .pm-focus-music-info small {
+    color: var(--focus-secondary);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 1px;
+}
+
+#pomodoro-app .pm-focus-music-info strong {
+    color: var(--focus-foreground);
+    font-size: 12px;
+    font-weight: 650;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#pomodoro-app .pm-focus-music-toggle {
+    flex: 0 0 43px;
+    width: 43px;
+    height: 43px;
+    padding: 0;
+    border-radius: 11px;
+}
+
+#pomodoro-app .pm-focus-exit-btn {
+    min-height: 45px;
+    border-radius: 999px;
+}
+
+
+/* =====================================================
+   18. CONFIRM EXIT DIALOG
+   ===================================================== */
+
+#pomodoro-app .pm-focus-exit-dialog {
+    position: fixed;
+
+    width: min(430px, calc(100vw - 32px));
+    max-width: 100%;
+    max-height: calc(100dvh - 32px);
+
+    margin: auto;
+    padding: 0;
+    overflow-y: auto;
+
+    background: #FFFFFF;
+    color: #242A32;
+
+    border: 1px solid #F6D0D3;
+    border-radius: 20px;
+
+    box-shadow: 0 24px 70px rgba(20,30,45,.25);
+}
+
+#pomodoro-app .pm-focus-exit-dialog:not([open]) {
+    display: none;
+}
+
+#pomodoro-app .pm-focus-exit-dialog::backdrop {
+    background: rgba(17,27,43,.52);
+    backdrop-filter: blur(4px);
+}
+
+#pomodoro-app .pm-focus-exit-dialog-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px;
+    text-align: center;
+}
+
+#pomodoro-app .pm-focus-exit-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 52px;
+    height: 52px;
+    margin-bottom: 18px;
+
+    background: #FBE8E9;
+    color: #D21624;
+    border-radius: 16px;
+    font-size: 20px;
+}
+
+#pomodoro-app .pm-focus-exit-dialog h3 {
+    margin: 0;
+    color: #242A32;
+    font-size: 19px;
+    font-weight: 750;
+    line-height: 1.4;
+    letter-spacing: -.02em;
+}
+
+#pomodoro-app .pm-focus-exit-dialog p {
+    margin: 12px 0 24px;
+    color: #626A73;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+#pomodoro-app .pm-focus-exit-actions {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+}
+
+#pomodoro-app .pm-focus-keep-btn,
+#pomodoro-app .pm-focus-confirm-exit-btn {
+    width: 100%;
+    min-height: 45px;
+    padding: 12px 16px;
+
+    border-radius: 11px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 150ms ease,
+        border-color 150ms ease;
+}
+
+/* Giữ tập trung - Đỏ đặc */
+
+#pomodoro-app .pm-focus-keep-btn {
+    background: #D21624;
+    border: 1px solid #D21624;
+    color: #FFFFFF;
+}
+
+#pomodoro-app .pm-focus-keep-btn:hover {
+    background: #BD1420;
+    border-color: #BD1420;
+}
+
+/* Xác nhận gác lại - Viền đỏ */
+
+#pomodoro-app .pm-focus-confirm-exit-btn {
+    background: #FFFFFF;
+    border: 1px solid #D21624;
+    color: #D21624;
+}
+
+#pomodoro-app .pm-focus-confirm-exit-btn:hover {
+    background: #FBE8E9;
+}
+
+
+/* =====================================================
+   19. KEYBOARD ACCESSIBILITY
+   ===================================================== */
+
+#pomodoro-app .pm-in-focus button:focus-visible,
+#pomodoro-app .pm-focus-screen button:focus-visible {
+    outline: 3px solid var(--pm-blue, #014BAA);
+    outline-offset: 3px;
+}
+
+#pomodoro-app .pm-focus-screen button:focus-visible {
+    outline-color: var(--focus-foreground);
+}
+
+#pomodoro-app .pm-focus-exit-dialog button:focus-visible {
+    outline: 3px solid rgba(210,22,36,.25);
+    outline-offset: 3px;
+}
+
+
+/* =====================================================
+   20. TABLET
+   ===================================================== */
+
+@media (max-width: 1100px) {
+
+    #pomodoro-app .pm-in-focus {
+        margin-top: 32px;
+    }
+
+}
+
+@media (max-width: 900px) {
+
+    #pomodoro-app .pm-focus-active-time {
+        font-size: clamp(68px, 11vw, 120px);
+    }
+
+    #pomodoro-app .pm-focus-preview-body {
+        padding: 16px 20px 18px;
+    }
+
+}
+
+
+/* =====================================================
+   21. MOBILE
+   ===================================================== */
+
+@media (max-width: 650px) {
+
+    #pomodoro-app .pm-in-focus {
+        margin-top: 24px;
+    }
+
+    #pomodoro-app .pm-in-header h2 {
+        font-size: clamp(24px, 6vw, 30px);
+    }
+
+    #pomodoro-app .pm-in-header p {
+        font-size: 13px;
+    }
+
+    #pomodoro-app .pm-focus-preview {
+        border-radius: 16px;
+    }
+
+    #pomodoro-app .pm-focus-preview-header {
+        padding: 13px 15px 7px;
+    }
+
+    #pomodoro-app .pm-focus-header-accent {
+        margin: 3px 15px 10px;
+    }
+
+    #pomodoro-app .pm-focus-preview-body {
+        gap: 13px;
+        padding: 14px 15px 16px;
+    }
+
+    #pomodoro-app .pm-focus-duration-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #pomodoro-app .pm-focus-preview-time {
+        font-size: clamp(48px, 11vw, 66px);
+    }
+
+    /* Custom Duration */
+
+    #pomodoro-app .pm-focus-custom-field {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    #pomodoro-app .pm-focus-custom-info {
+        min-width: 0;
+    }
+
+    #pomodoro-app .pm-focus-custom-input-row input {
+        width: 76px;
+    }
+
+    /* Active Focus */
+
+    #pomodoro-app .pm-focus-screen-content {
+        padding: 18px;
+    }
+
+    #pomodoro-app .pm-focus-center {
+        min-height: 280px;
+        padding: 30px 6px;
+    }
+
+    #pomodoro-app .pm-focus-active-time {
+        font-size: clamp(54px, 13vw, 82px);
+    }
+
+    #pomodoro-app .pm-focus-screen-footer {
+        align-items: flex-end;
+    }
+
+    #pomodoro-app .pm-focus-exit-dialog-content {
+        padding: 24px 20px;
+    }
+
+}
+
+
+/* =====================================================
+   22. SMALL MOBILE
+   ===================================================== */
+
+@media (max-width: 400px) {
+
+    #pomodoro-app .pm-focus-screen-header {
+        gap: 12px;
+    }
+
+    #pomodoro-app .pm-focus-brand {
+        font-size: 10px;
+    }
+
+    #pomodoro-app .pm-focus-contrast-btn {
+        padding: 7px 9px;
+        font-size: 10px;
+    }
+
+    #pomodoro-app .pm-focus-active-time {
+        font-size: clamp(48px, 13vw, 64px);
+    }
+
+    #pomodoro-app .pm-focus-main-control {
+        min-width: 155px;
+    }
+
+    #pomodoro-app .pm-focus-music-info {
+        max-width: 150px;
+    }
+
+    #pomodoro-app .pm-focus-exit-btn {
+        padding: 10px 12px;
+    }
+
+}
+
+
+/* =====================================================
+   23. REDUCED MOTION
+   ===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    #pomodoro-app .pm-focus-duration-btn,
+    #pomodoro-app .pm-focus-start-btn,
+    #pomodoro-app .pm-focus-control,
+    #pomodoro-app .pm-focus-overlay,
+    #pomodoro-app .pm-focus-keep-btn,
+    #pomodoro-app .pm-focus-confirm-exit-btn,
+    #pomodoro-app .pm-focus-custom-input-row input {
+        transition: none;
+    }
+
+}

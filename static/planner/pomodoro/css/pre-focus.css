@@ -1,0 +1,759 @@
+
+/* =====================================================
+   POMODORO WORKSPACE 2.0
+   PRE-FOCUS V10 - PREMIUM MINIMAL
+
+   DESIGN:
+   - AARHUSIAN SKY: #014BAA
+   - WHITE CHALK: #F8F3F0
+
+   LAYOUT:
+   - Layout 1 và Layout 2: 1:1
+   - Chiều cao độc lập theo nội dung
+   - Không để khoảng trắng do Grid kéo giãn
+
+   BEHAVIOR:
+   - Header đứng yên trong từng card
+   - Body cuộn riêng khi vượt giới hạn
+   - Dropdown mở rộng và đẩy nội dung
+   - Card tự thu gọn khi đóng Dropdown
+   - Layout 2 luôn hoạt động
+
+   Scope: #pomodoro-app
+   ===================================================== */
+
+
+/* =====================================================
+   1. PRE-FOCUS CONTAINER
+   ===================================================== */
+
+#pomodoro-app .pm-pre-focus {
+    width: 100%;
+    min-width: 0;
+
+    margin: 0;
+    padding: 0;
+
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+
+/* =====================================================
+   2. PRE-FOCUS PAGE HEADER
+   ===================================================== */
+
+#pomodoro-app .pm-pre-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+#pomodoro-app .pm-pre-header-content {
+    width: 100%;
+    max-width: 760px;
+    min-width: 0;
+}
+
+#pomodoro-app .pm-eyebrow {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 8px;
+
+    color: var(--pm-blue, #014BAA);
+
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.4;
+
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+#pomodoro-app .pm-eyebrow-dot {
+    display: inline-block;
+
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+
+    background: var(--pm-red, #D21624);
+    border-radius: 50%;
+}
+
+#pomodoro-app .pm-pre-header h1 {
+    margin: 10px 0 8px;
+
+    color: var(
+        --pm-theme-heading,
+        var(--pm-text-primary, #191818)
+    );
+
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 750;
+    line-height: 1.22;
+
+    letter-spacing: -0.035em;
+}
+
+#pomodoro-app .pm-pre-header p {
+    margin: 0;
+
+    color: var(
+        --pm-theme-muted,
+        var(--pm-text-secondary, #636160)
+    );
+
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+
+/* =====================================================
+   3. MAIN GRID - 1:1
+   CHIỀU CAO ĐỘC LẬP
+   ===================================================== */
+
+#pomodoro-app .pm-setup-grid {
+    display: grid;
+
+    /* Hai box bằng nhau về chiều rộng */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 20px;
+
+    /*
+       Không dùng stretch.
+       Mỗi box có chiều cao riêng theo nội dung.
+    */
+    align-items: start;
+
+    width: 100%;
+    min-width: 0;
+}
+
+
+/* =====================================================
+   4. SETUP CARDS - DYNAMIC HEIGHT
+   ===================================================== */
+
+#pomodoro-app .pm-setup-card {
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    min-width: 0;
+
+    /*
+       Nội dung ít: card tự thu gọn.
+       Nội dung nhiều: card tự cao lên.
+
+       Không đặt chiều cao tối thiểu.
+    */
+    height: fit-content;
+    min-height: 0;
+
+    /*
+       Giới hạn chiều cao.
+
+       Khi nội dung vượt giới hạn này,
+       chỉ phần body cuộn.
+    */
+    max-height: min(580px, 75dvh);
+
+    margin: 0;
+    padding: 0;
+
+    background: var(--pm-surface, #FFFFFF);
+
+    border: 1px solid var(--pm-border, #DFDBD8);
+    border-radius: var(--pm-radius-lg, 24px);
+
+    box-shadow: var(
+        --pm-shadow-sm,
+        0 2px 8px rgba(0, 30, 68, 0.04)
+    );
+
+    /*
+       Giữ phần body và nội dung
+       bên trong card.
+    */
+    overflow: hidden;
+}
+
+
+/* =====================================================
+   5. PREMIUM MINIMAL CARD HEADER
+   ===================================================== */
+
+#pomodoro-app .pm-setup-card > .pm-card-header {
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+
+    /*
+       Header không co lại
+       khi phần body có nội dung dài.
+    */
+    flex: 0 0 auto;
+
+    width: 100%;
+    min-width: 0;
+
+    margin: 0;
+    padding: 17px 20px 15px;
+
+    /*
+       Header nằm ngoài vùng body cuộn
+       nên luôn đứng yên trong card.
+    */
+    position: relative;
+    z-index: 2;
+
+    background: var(--pm-surface, #FFFFFF);
+
+    border-bottom: 1px solid var(--pm-border, #DFDBD8);
+}
+
+
+/* Nội dung chính của Header */
+
+#pomodoro-app .pm-card-header-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    width: 100%;
+    min-width: 0;
+
+    gap: 16px;
+}
+
+
+/* Nhóm tiêu đề */
+
+#pomodoro-app .pm-card-title-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    flex: 1 1 auto;
+
+    min-width: 0;
+}
+
+
+/* Tiêu đề */
+
+#pomodoro-app .pm-card-title-group h2 {
+    margin: 0;
+
+    color: var(--pm-blue, #014BAA);
+
+    font-size: 17px;
+    font-weight: 750;
+    line-height: 1.35;
+
+    letter-spacing: -0.02em;
+}
+
+
+/* Mô tả */
+
+#pomodoro-app .pm-card-title-group p {
+    margin: 5px 0 0;
+
+    color: var(
+        --pm-theme-muted,
+        var(--pm-text-secondary, #636160)
+    );
+
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+
+/* Icon bên phải - không có nền */
+
+#pomodoro-app .pm-card-header-symbol {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    width: 28px;
+    height: 28px;
+
+    color: var(--pm-blue, #014BAA);
+    font-size: 20px;
+
+    background: transparent;
+    border: none;
+    border-radius: 0;
+}
+
+
+/* Thanh nhấn xanh */
+
+#pomodoro-app .pm-header-accent {
+    display: block;
+    flex: 0 0 auto;
+
+    width: 36px;
+    height: 2px;
+
+    background: var(--pm-blue, #014BAA);
+    border-radius: 999px;
+}
+
+
+/* Không sử dụng STEP và icon nền cũ */
+
+#pomodoro-app .pm-card-index,
+#pomodoro-app .pm-setup-card > .pm-card-header .pm-card-icon {
+    display: none;
+}
+
+
+/* =====================================================
+   6. CARD BODY - INTERNAL SCROLL
+   ===================================================== */
+
+#pomodoro-app .pm-setup-card > .pm-card-body {
+    display: block;
+
+    /*
+       Body giữ chiều cao nội dung tự nhiên
+       khi còn đủ không gian.
+
+       Chỉ co lại khi card đạt max-height.
+    */
+    flex: 0 1 auto;
+
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+
+    height: auto;
+
+    padding: 20px;
+
+    /*
+       Thanh cuộn chỉ xuất hiện khi
+       nội dung vượt chiều cao card.
+    */
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    overscroll-behavior: contain;
+
+    scrollbar-width: thin;
+
+    scrollbar-color:
+        var(--pm-blue-t80, #CCDBEE)
+        transparent;
+}
+
+
+/* Scrollbar Chrome / Edge / Safari */
+
+#pomodoro-app
+.pm-setup-card > .pm-card-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+#pomodoro-app
+.pm-setup-card > .pm-card-body::-webkit-scrollbar-thumb {
+    background: var(--pm-blue-t80, #CCDBEE);
+    border-radius: 10px;
+}
+
+#pomodoro-app
+.pm-setup-card > .pm-card-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+/* =====================================================
+   7. LAYOUT 1 - TASK SETUP
+   ===================================================== */
+
+#pomodoro-app .pm-task-card {
+    grid-column: 1;
+}
+
+#pomodoro-app .pm-task-body {
+    min-width: 0;
+}
+
+#pomodoro-app .pm-task-body .pm-task-setup {
+    width: 100%;
+    min-width: 0;
+}
+
+
+/* =====================================================
+   8. LAYOUT 2 - ENVIRONMENT SETUP
+   ===================================================== */
+
+#pomodoro-app .pm-environment-card {
+    grid-column: 2;
+}
+
+
+/*
+   Environment hiển thị theo danh sách dọc:
+
+   1. Background Picker
+   2. Separator
+   3. Music Picker
+*/
+
+#pomodoro-app .pm-setup-card > .pm-environment-body {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+
+    gap: 20px;
+}
+
+#pomodoro-app .pm-environment-column {
+    display: block;
+
+    width: 100%;
+    min-width: 0;
+
+    flex: 0 0 auto;
+}
+
+
+/* Bỏ kiểu chia cột cũ */
+
+#pomodoro-app .pm-music-column {
+    border-left: none;
+    border-top: none;
+
+    padding-left: 0;
+    padding-top: 0;
+}
+
+
+/* Đường phân cách ngang */
+
+#pomodoro-app .pm-section-separator {
+    display: block;
+
+    width: 100%;
+    height: 1px;
+
+    flex: 0 0 auto;
+
+    background: var(--pm-border, #DFDBD8);
+}
+
+
+/* =====================================================
+   9. EXPANDABLE DROPDOWNS
+   ===================================================== */
+
+/*
+   Dropdown mở rộng theo nội dung.
+
+   Khi mở Background Library:
+   - Music Picker bị đẩy xuống.
+
+   Khi mở Music Library:
+   - Mini Player bị đẩy xuống.
+
+   Khi vượt max-height:
+   - Body xuất hiện thanh cuộn.
+*/
+
+
+/* Picker container */
+
+#pomodoro-app
+.pm-environment-body .pm-background-picker,
+
+#pomodoro-app
+.pm-environment-body .pm-music-picker {
+    position: static;
+
+    width: 100%;
+    min-width: 0;
+}
+
+
+/* Background Library + Music Library */
+
+#pomodoro-app
+.pm-environment-body .pm-dropdown-library,
+
+#pomodoro-app
+.pm-environment-body .pm-music-library {
+    position: static;
+
+    inset: auto;
+    z-index: auto;
+
+    width: 100%;
+    max-height: none;
+
+    margin-top: 10px;
+    padding: 12px;
+
+    /*
+       Không tạo thanh cuộn riêng
+       bên trong thư viện.
+    */
+    overflow: visible;
+
+    background: #FFFDF9;
+
+    border: 1px solid var(--pm-border, #DFDBD8);
+    border-radius: 12px;
+
+    box-shadow: none;
+}
+
+
+/* Không dùng scrollbar lồng nhau */
+
+#pomodoro-app
+.pm-environment-body .pm-background-grid,
+
+#pomodoro-app
+.pm-environment-body .pm-music-list {
+    max-height: none;
+    overflow: visible;
+}
+
+
+/* Background Gallery */
+
+#pomodoro-app
+.pm-environment-body .pm-background-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 12px;
+}
+
+
+/* =====================================================
+   10. TABLET
+   ===================================================== */
+
+@media (max-width: 1100px) {
+
+    /*
+       Hai box xếp dọc.
+       Chiều cao hoàn toàn độc lập.
+    */
+
+    #pomodoro-app .pm-setup-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
+
+        align-items: start;
+    }
+
+    #pomodoro-app .pm-task-card,
+    #pomodoro-app .pm-environment-card {
+        grid-column: 1;
+    }
+
+    #pomodoro-app .pm-setup-card {
+        height: fit-content;
+        min-height: 0;
+
+        max-height: 70dvh;
+    }
+
+}
+
+
+/* =====================================================
+   11. MOBILE
+   ===================================================== */
+
+@media (max-width: 650px) {
+
+    #pomodoro-app .pm-pre-header {
+        margin-bottom: 20px;
+    }
+
+    #pomodoro-app .pm-pre-header h1 {
+        font-size: clamp(24px, 6vw, 30px);
+    }
+
+    #pomodoro-app .pm-pre-header p {
+        font-size: 13px;
+    }
+
+    #pomodoro-app .pm-setup-grid {
+        gap: 16px;
+    }
+
+    /* Chiều cao theo nội dung */
+
+    #pomodoro-app .pm-setup-card {
+        height: fit-content;
+        min-height: 0;
+
+        max-height: 75dvh;
+
+        border-radius: 16px;
+    }
+
+    /* Header Premium Minimal */
+
+    #pomodoro-app .pm-setup-card > .pm-card-header {
+        padding: 15px 16px 13px;
+        gap: 10px;
+    }
+
+    #pomodoro-app .pm-card-header-main {
+        gap: 12px;
+    }
+
+    #pomodoro-app .pm-card-title-group h2 {
+        font-size: 16px;
+    }
+
+    #pomodoro-app .pm-card-title-group p {
+        font-size: 11px;
+        margin-top: 4px;
+    }
+
+    #pomodoro-app .pm-card-header-symbol {
+        width: 24px;
+        height: 24px;
+
+        font-size: 18px;
+    }
+
+    #pomodoro-app .pm-header-accent {
+        width: 32px;
+    }
+
+    /* Body */
+
+    #pomodoro-app .pm-setup-card > .pm-card-body {
+        padding: 16px;
+    }
+
+    #pomodoro-app .pm-setup-card > .pm-environment-body {
+        gap: 18px;
+    }
+
+}
+
+
+/* =====================================================
+   12. SMALL MOBILE
+   ===================================================== */
+
+@media (max-width: 420px) {
+
+    #pomodoro-app .pm-setup-card > .pm-card-header {
+        padding: 13px 14px 12px;
+    }
+
+    #pomodoro-app .pm-setup-card > .pm-card-body {
+        padding: 14px;
+    }
+
+    #pomodoro-app
+    .pm-environment-body .pm-background-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+}
+
+
+/* =====================================================
+   13. ACCESSIBILITY
+   ===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    #pomodoro-app .pm-setup-card,
+    #pomodoro-app .pm-card-header,
+    #pomodoro-app .pm-header-accent {
+        transition: none;
+    }
+
+}
+
+/* =====================================================
+   PRE-FOCUS V11 - SYNCHRONIZED CARD HEIGHT
+
+   Layout 1 quyết định chiều cao.
+   Layout 2 có chiều cao bằng Layout 1.
+   Nội dung vượt chiều cao sẽ cuộn trong body.
+   ===================================================== */
+
+/* Hai layout vẫn chia tỷ lệ chiều rộng 1:1 */
+#pomodoro-app .pm-setup-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+
+/* Layout 1 tự thay đổi chiều cao theo nội dung */
+#pomodoro-app .pm-task-card {
+    height: fit-content;
+    min-height: 0;
+    max-height: min(580px, 75dvh);
+}
+
+/* Layout 2 nhận chiều cao đồng bộ từ JavaScript */
+#pomodoro-app .pm-environment-card {
+    height: var(--pm-synced-height, auto);
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+}
+
+/* Header không bị cuộn hoặc thu nhỏ */
+#pomodoro-app .pm-setup-card > .pm-card-header {
+    flex: 0 0 auto;
+}
+
+/* Nội dung có thể cuộn độc lập */
+#pomodoro-app .pm-setup-card > .pm-card-body {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+}
+
+/* Layout 2: body chiếm toàn bộ phần còn lại */
+#pomodoro-app .pm-environment-card > .pm-card-body {
+    flex: 1 1 auto;
+}
+
+/* Tablet / Mobile: mỗi box lại cao theo nội dung riêng */
+@media (max-width: 1100px) {
+    #pomodoro-app .pm-setup-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #pomodoro-app .pm-environment-card {
+        height: auto;
+        max-height: 70dvh;
+    }
+}

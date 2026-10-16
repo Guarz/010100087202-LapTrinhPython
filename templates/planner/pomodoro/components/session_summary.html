@@ -1,0 +1,135 @@
+
+<!-- =====================================================
+     POMODORO WORKSPACE 2.0
+     CELEBRATION SHEET V4 - COMPACT MINIMAL
+     Theme: GRASS GREEN / WHITE CHALK
+     ===================================================== -->
+
+<dialog
+    id="pm-session-summary"
+    class="pm-session-summary"
+    aria-labelledby="pm-summary-title"
+    aria-describedby="pm-summary-message"
+>
+
+    <div class="pm-summary-content">
+
+        <!-- Giữ ID để tương thích JS.
+             Nút đóng được ẩn theo thiết kế mới. -->
+        <button
+            type="button"
+            id="pm-summary-close"
+            class="pm-summary-close"
+            aria-label="Đóng tổng kết"
+            hidden
+        ></button>
+
+
+        <!-- =============================================
+             01. MOTIVATION
+             ============================================= -->
+
+        <header class="pm-summary-hero">
+
+            <h2 id="pm-summary-title">
+                Out trình chưa!
+            </h2>
+
+            <p id="pm-summary-message">
+                Học hành năng suất thế này thì thủ khoa
+                cũng phải dè chừng bạn đấy nhá!
+            </p>
+
+        </header>
+
+
+        <!-- =============================================
+             02. SESSION RESULT
+             ============================================= -->
+
+        <section
+            class="pm-summary-notice"
+            aria-label="Kết quả phiên tập trung"
+        >
+
+            <!-- LEFT: TASK -->
+
+            <div class="pm-summary-task-block">
+
+                <span class="pm-summary-notice-heading">
+                    <span
+                        class="pm-summary-green-dot"
+                        aria-hidden="true"
+                    ></span>
+                    PHIÊN VỪA XONG
+                </span>
+
+                <span class="pm-summary-label">
+                    Nhiệm vụ đã tập trung
+                </span>
+
+                <strong
+                    id="pm-summary-task-name"
+                    class="pm-summary-task-name"
+                >
+                    Đang cập nhật nhiệm vụ
+                </strong>
+
+            </div>
+
+
+            <!-- RIGHT: DURATION -->
+
+            <div class="pm-summary-time-block">
+
+                <span class="pm-summary-label">
+                    Thời gian tập trung
+                </span>
+
+                <div class="pm-summary-duration">
+
+                    <strong id="pm-summary-minutes">
+                        —
+                    </strong>
+
+                    <span>phút</span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =============================================
+             03. ACTIONS
+             ============================================= -->
+
+        <div class="pm-summary-actions">
+
+            <button
+                type="button"
+                id="pm-summary-view-progress"
+                class="pm-summary-primary-btn"
+            >
+                <span>Xem tiến độ</span>
+
+                <i
+                    class="fa-solid fa-arrow-right"
+                    aria-hidden="true"
+                ></i>
+            </button>
+
+            <button
+                type="button"
+                id="pm-summary-dismiss"
+                class="pm-summary-secondary-btn"
+            >
+                Để sau
+            </button>
+
+        </div>
+
+    </div>
+
+</dialog>
