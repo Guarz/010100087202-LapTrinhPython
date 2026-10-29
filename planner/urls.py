@@ -39,6 +39,18 @@ urlpatterns = [
         name='toggle_task_status'
     ),
 
+    path(
+        'task/<int:task_id>/edit/',
+        views.edit_task,
+        name='edit_task'
+    ),
+
+    path(
+        'task/<int:task_id>/material/',
+        views.download_study_material,
+        name='download_study_material'
+    ),
+
     # Xóa nhiệm vụ.
     path(
         'task/<int:task_id>/delete/',
@@ -82,6 +94,30 @@ urlpatterns = [
         'calendar/',
         views.calendar_view,
         name='calendar_view'
+    ),
+
+    path(
+        'calendar/export.ics',
+        views.export_calendar_ics,
+        name='export_calendar_ics'
+    ),
+
+    path(
+        'calendar/events/new/',
+        views.create_schedule_block,
+        name='create_schedule_block'
+    ),
+
+    path(
+        'calendar/events/<int:block_id>/edit/',
+        views.edit_schedule_block,
+        name='edit_schedule_block'
+    ),
+
+    path(
+        'calendar/events/<int:block_id>/delete/',
+        views.delete_schedule_block,
+        name='delete_schedule_block'
     ),
 
     # API lấy sự kiện cho Calendar.

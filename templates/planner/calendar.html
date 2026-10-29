@@ -34,8 +34,18 @@
                 <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
                 <span>Tự động lập lịch tuần</span>
             </a>
+            <a href="{% url 'create_schedule_block' %}" class="w-full sm:w-auto text-center justify-center bg-white hover:bg-blue-50 text-blue-700 font-semibold px-4 py-2.5 rounded-xl border border-blue-200 transition flex items-center gap-2 text-sm">
+                <i class="fa-solid fa-plus"></i>
+                <span>Tạo sự kiện</span>
+            </a>
+            <a href="{% url 'export_calendar_ics' %}" class="w-full sm:w-auto text-center justify-center bg-white hover:bg-gray-50 text-gray-700 font-semibold px-4 py-2.5 rounded-xl border border-gray-200 transition flex items-center gap-2 text-sm">
+                <i class="fa-solid fa-download"></i>
+                <span>Xuất lịch .ics</span>
+            </a>
         </div>
     </div>
+
+    <div hidden>{% csrf_token %}</div>
 
     <!-- Khung Calendar -->
     <div class="bg-white p-3 sm:p-6 rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -96,7 +106,14 @@
             eventResize: function(info) { saveEventChange(info.event); },
 
             eventClick: function(info) {
-                alert('Sự kiện: ' + info.event.title + '\nThời gian: ' + info.event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+                const eventId = info.event.id;
+                if (eventId.startsWith('task-')) {
+                    window.location.href = "{% url 'edit_task' 0 %}".replace('/0/', `/${eventId.slice(5)}/`);
+                } else if (eventId.startsWith('block-') && !info.event.extendedProps.is_fixed) {
+                    window.location.href = "{% url 'edit_schedule_block' 0 %}".replace('/0/edit/', `/${eventId.slice(6)}/edit/`);
+                } else {
+                    alert('Sự kiện lịch cố định không thể sửa trực tiếp tại đây.');
+                }
             }
         });
 
@@ -113,7 +130,10 @@
         function saveEventChange(event) {
             fetch('/api/update-block-time/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
                 body: JSON.stringify({
                     id: event.id,
                     start: event.start.toISOString(),
@@ -123,11 +143,14 @@
             .then(res => res.json())
             .then(data => {
                 if (data.status !== 'success') {
-                    alert('Lỗi cập nhật!');
+                    alert(data.message || 'Không thể cập nhật sự kiện.');
                     calendar.refetchEvents();
                 }
             })
-            .catch(() => calendar.refetchEvents());
+            .catch(() => {
+                alert('Không thể kết nối để cập nhật sự kiện.');
+                calendar.refetchEvents();
+            });
         }
     });
 </script>

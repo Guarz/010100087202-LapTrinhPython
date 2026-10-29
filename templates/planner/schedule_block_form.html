@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_create %}Tạo sự kiện{% else %}Sửa sự kiện{% endif %} - AI Study Planner{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-2xl border border-gray-100 shadow-sm">
+    <div class="mb-6">
+        <h1 class="text-xl font-bold text-gray-900">
+            <i class="fa-regular fa-calendar-plus text-blue-600 mr-2"></i>
+            {% if is_create %}Tạo sự kiện lịch{% else %}Chỉnh sửa sự kiện{% endif %}
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">Chọn khoảng thời gian và nhiệm vụ liên quan (nếu có).</p>
+    </div>
+
+    <form method="POST" class="space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                    <p class="text-red-600 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+            <a href="{% url 'calendar_view' %}" class="text-center px-4 py-2.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                Hủy
+            </a>
+            <button type="submit" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                {% if is_create %}Tạo sự kiện{% else %}Lưu thay đổi{% endif %}
+            </button>
+        </div>
+    </form>
+
+    {% if not is_create %}
+        <form method="POST" action="{% url 'delete_schedule_block' schedule_event.id %}" class="mt-4 pt-4 border-t border-gray-100" onsubmit="return confirm('Bạn có chắc muốn xóa sự kiện này?')">
+            {% csrf_token %}
+            <button type="submit" class="text-sm font-semibold text-red-600 hover:text-red-700">
+                <i class="fa-solid fa-trash mr-1"></i> Xóa sự kiện
+            </button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

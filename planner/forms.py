@@ -1,11 +1,18 @@
 # planner/forms.py
 from django import forms
-from .models import Task
-from .models import RecurringSchedule
+from .models import Course, RecurringSchedule, ScheduleBlock, Task
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
 class TaskForm(forms.ModelForm):
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['course'].queryset = (
+            Course.objects.filter(user=user)
+            if user is not None
+            else Course.objects.none()
+        )
+
     deadline = forms.DateTimeField(
         widget=forms.DateTimeInput(
             attrs={'type': 'datetime-local', 'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}
@@ -15,21 +22,101 @@ class TaskForm(forms.ModelForm):
 
     class Meta:
         model = Task
-        fields = ['title', 'subject_name', 'deadline', 'estimated_minutes', 'priority', 'material_url']
+        fields = [
+            'title',
+            'course',
+            'subject_name',
+            'deadline',
+            'estimated_minutes',
+            'priority',
+            'material_url',
+            'material_file',
+        ]
         labels = {
             'title': 'Tên bài tập / Nhiệm vụ',
+            'course': 'Môn học (khóa học)',
             'subject_name': 'Môn học',
             'estimated_minutes': 'Thời gian ước tính (phút)',
             'priority': 'Mức ưu tiên',
-            'material_url': 'Link tài liệu ôn tập',
+            'material_url': 'Link tài liệu ôn tập (tùy chọn)',
+            'material_file': 'Tải tài liệu lên (PDF, Word, PowerPoint, TXT; tối đa 10 MB)',
         }
         widgets = {
             'title': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', 'placeholder': 'VD: Làm bài tập lớn...'}),
+            'course': forms.Select(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}),
             'subject_name': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', 'placeholder': 'VD: Kiến trúc máy tính'}),
             'estimated_minutes': forms.NumberInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', 'placeholder': 'VD: 90'}),
             'priority': forms.Select(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}),
             'material_url': forms.URLInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', 'placeholder': 'https://drive.google.com/...'}),
+            'material_file': forms.ClearableFileInput(attrs={
+                'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+                'accept': '.pdf,.doc,.docx,.ppt,.pptx,.txt',
+            }),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        course = cleaned_data.get('course')
+        if course and not cleaned_data.get('subject_name'):
+            cleaned_data['subject_name'] = course.name
+        return cleaned_data
+
+
+class ScheduleBlockForm(forms.ModelForm):
+    start_time = forms.DateTimeField(
+        widget=forms.DateTimeInput(
+            attrs={
+                'type': 'datetime-local',
+                'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+            }
+        ),
+        label='Bắt đầu'
+    )
+    end_time = forms.DateTimeField(
+        widget=forms.DateTimeInput(
+            attrs={
+                'type': 'datetime-local',
+                'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+            }
+        ),
+        label='Kết thúc'
+    )
+
+    class Meta:
+        model = ScheduleBlock
+        fields = ['title', 'task', 'start_time', 'end_time']
+        labels = {
+            'title': 'Tên sự kiện',
+            'task': 'Nhiệm vụ liên quan',
+        }
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+                'placeholder': 'VD: Ôn tập chương 1',
+            }),
+            'task': forms.Select(attrs={
+                'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+            }),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['task'].required = False
+        self.fields['task'].queryset = (
+            Task.objects.filter(user=user)
+            if user is not None
+            else Task.objects.none()
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        if start_time and end_time and end_time <= start_time:
+            self.add_error('end_time', 'Thời gian kết thúc phải sau thời gian bắt đầu.')
+        return cleaned_data
+
+
 class RecurringScheduleForm(forms.ModelForm):
     class Meta:
         model = RecurringSchedule

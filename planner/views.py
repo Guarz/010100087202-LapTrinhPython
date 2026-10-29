@@ -15,17 +15,19 @@
 # ============================================================
 
 import json
+import os
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.core.files.storage import default_storage
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 
 from django.views.decorators.csrf import (
-    csrf_exempt,
     ensure_csrf_cookie,
 )
 
 from django.views.decorators.http import (
     require_GET,
+    require_http_methods,
     require_POST,
 )
 
@@ -35,8 +37,14 @@ from django.utils import timezone
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
+from django.utils.dateparse import parse_datetime
 
-from .forms import TaskForm, RecurringScheduleForm, RegisterForm
+from .forms import (
+    TaskForm,
+    ScheduleBlockForm,
+    RecurringScheduleForm,
+    RegisterForm,
+)
 
 from .models import (
     Task,
@@ -48,6 +56,7 @@ from .models import (
 
 from .scheduler import auto_generate_weekly_schedule
 from .ai_assistant import analyze_schedule_with_ai
+from .icalendar import build_user_calendar
 
 # C2.3 - Service lưu phiên Pomodoro.
 from .pomodoro_services import (
@@ -68,44 +77,19 @@ from .pomodoro_statistics import (
 
 @login_required
 def task_list(request):
-
-    if request.user.is_authenticated:
-
-        tasks = Task.objects.filter(
-            user=request.user
-        ).order_by('deadline')
-
-    else:
-
-        tasks = Task.objects.all().order_by('deadline')
+    tasks = Task.objects.filter(
+        user=request.user
+    ).select_related('course').order_by('deadline')
 
     if request.method == 'POST':
-
-        form = TaskForm(request.POST)
-
+        form = TaskForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-
-            new_task = form.save(commit=False)
-
-            if request.user.is_authenticated:
-
-                new_task.user = request.user
-
-            else:
-
-                # Gán tạm cho user đầu tiên trong DB
-                # để test nếu chưa login.
-                from django.contrib.auth.models import User
-
-                new_task.user = User.objects.first()
-
-            new_task.save()
-
+            task = form.save(commit=False)
+            task.user = request.user
+            task.save()
             return redirect('task_list')
-
     else:
-
-        form = TaskForm()
+        form = TaskForm(user=request.user)
 
     context = {
         'tasks': tasks,
@@ -119,11 +103,14 @@ def task_list(request):
     )
 
 
+@login_required
+@require_POST
 def toggle_task_status(request, task_id):
 
     task = get_object_or_404(
         Task,
-        id=task_id
+        id=task_id,
+        user=request.user,
     )
 
     if task.status == 'completed':
@@ -139,16 +126,82 @@ def toggle_task_status(request, task_id):
     return redirect('task_list')
 
 
+@login_required
+@require_POST
 def delete_task(request, task_id):
 
     task = get_object_or_404(
         Task,
-        id=task_id
+        id=task_id,
+        user=request.user,
     )
 
+    material_name = task.material_file.name if task.material_file else None
     task.delete()
+    if material_name:
+        default_storage.delete(material_name)
 
     return redirect('task_list')
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def edit_task(request, task_id):
+    task = get_object_or_404(
+        Task,
+        id=task_id,
+        user=request.user,
+    )
+
+    if request.method == 'POST':
+        old_material_name = (
+            task.material_file.name
+            if task.material_file
+            else None
+        )
+        form = TaskForm(
+            request.POST,
+            request.FILES,
+            instance=task,
+            user=request.user,
+        )
+        if form.is_valid():
+            task = form.save()
+            if (
+                old_material_name
+                and task.material_file.name != old_material_name
+            ):
+                default_storage.delete(old_material_name)
+            return redirect('task_list')
+    else:
+        form = TaskForm(instance=task, user=request.user)
+
+    return render(
+        request,
+        'planner/task_form.html',
+        {'form': form, 'task': task},
+    )
+
+
+@login_required
+@require_GET
+def download_study_material(request, task_id):
+    task = get_object_or_404(
+        Task,
+        id=task_id,
+        user=request.user,
+    )
+    if not task.material_file:
+        raise Http404('Nhiệm vụ không có tài liệu đính kèm.')
+
+    response = FileResponse(
+        task.material_file.open('rb'),
+        as_attachment=True,
+        filename=os.path.basename(task.material_file.name),
+    )
+    response['Cache-Control'] = 'private, no-store'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 
 # ============================================================
@@ -156,6 +209,7 @@ def delete_task(request, task_id):
 # GIỮ NGUYÊN LOGIC CŨ
 # ============================================================
 
+@login_required
 def calendar_view(request):
 
     return render(
@@ -165,13 +219,21 @@ def calendar_view(request):
 
 
 @login_required
+@require_GET
+def export_calendar_ics(request):
+    response = HttpResponse(
+        build_user_calendar(request.user),
+        content_type='text/calendar; charset=utf-8',
+    )
+    response['Content-Disposition'] = 'attachment; filename="ai-study-planner.ics"'
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
+
+@login_required
 def calendar_events_api(request):
 
-    user = (
-        request.user
-        if request.user.is_authenticated
-        else None
-    )
+    user = request.user
 
     events = []
 
@@ -179,15 +241,7 @@ def calendar_events_api(request):
     # A. TASK DEADLINES
     # --------------------------------------------------------
 
-    task_filter = (
-        {'user': user}
-        if user
-        else {}
-    )
-
-    tasks = Task.objects.filter(
-        **task_filter
-    )
+    tasks = Task.objects.filter(user=user)
 
     for task in tasks:
 
@@ -220,15 +274,7 @@ def calendar_events_api(request):
     # B. SCHEDULE BLOCKS
     # --------------------------------------------------------
 
-    block_filter = (
-        {'user': user}
-        if user
-        else {}
-    )
-
-    blocks = ScheduleBlock.objects.filter(
-        **block_filter
-    )
+    blocks = ScheduleBlock.objects.filter(user=user)
 
     for block in blocks:
 
@@ -267,6 +313,72 @@ def calendar_events_api(request):
         events,
         safe=False
     )
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def create_schedule_block(request):
+    if request.method == 'POST':
+        form = ScheduleBlockForm(request.POST, user=request.user)
+        if form.is_valid():
+            block = form.save(commit=False)
+            block.user = request.user
+            block.is_fixed = False
+            block.status = 'confirmed'
+            block.save()
+            return redirect('calendar_view')
+    else:
+        form = ScheduleBlockForm(user=request.user)
+
+    return render(
+        request,
+        'planner/schedule_block_form.html',
+        {'form': form, 'is_create': True},
+    )
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def edit_schedule_block(request, block_id):
+    block = get_object_or_404(
+        ScheduleBlock,
+        id=block_id,
+        user=request.user,
+        is_fixed=False,
+    )
+
+    if request.method == 'POST':
+        form = ScheduleBlockForm(
+            request.POST,
+            instance=block,
+            user=request.user,
+        )
+        if form.is_valid():
+            updated_block = form.save(commit=False)
+            updated_block.status = 'confirmed'
+            updated_block.save()
+            return redirect('calendar_view')
+    else:
+        form = ScheduleBlockForm(instance=block, user=request.user)
+
+    return render(
+        request,
+        'planner/schedule_block_form.html',
+        {'form': form, 'is_create': False, 'schedule_event': block},
+    )
+
+
+@login_required
+@require_POST
+def delete_schedule_block(request, block_id):
+    block = get_object_or_404(
+        ScheduleBlock,
+        id=block_id,
+        user=request.user,
+        is_fixed=False,
+    )
+    block.delete()
+    return redirect('calendar_view')
 
 
 # ============================================================
@@ -371,58 +483,77 @@ def trigger_auto_schedule(request):
 # GIỮ NGUYÊN LOGIC CŨ
 # ============================================================
 
-@csrf_exempt
+@login_required
+@require_POST
 def update_block_time_api(request):
-
-    if request.method == 'POST':
-
-        data = json.loads(
-            request.body
+    try:
+        data = json.loads(request.body)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return JsonResponse(
+            {'status': 'error', 'message': 'Dữ liệu JSON không hợp lệ.'},
+            status=400,
         )
 
-        event_id = data.get(
-            'id',
-            ''
+    if not isinstance(data, dict):
+        return JsonResponse(
+            {'status': 'error', 'message': 'Nội dung JSON phải là một đối tượng.'},
+            status=400,
         )
 
-        # Chỉ chỉnh ScheduleBlock.
-        if event_id.startswith('block-'):
+    event_id = data.get('id', '')
+    if not isinstance(event_id, str) or not event_id.startswith('block-'):
+        return JsonResponse(
+            {'status': 'error', 'message': 'Sự kiện không hợp lệ.'},
+            status=400,
+        )
 
-            block_id = int(
-                event_id.replace(
-                    'block-',
-                    ''
-                )
-            )
+    try:
+        block_id = int(event_id.removeprefix('block-'))
+    except ValueError:
+        return JsonResponse(
+            {'status': 'error', 'message': 'Mã sự kiện không hợp lệ.'},
+            status=400,
+        )
 
-            block = get_object_or_404(
-                ScheduleBlock,
-                id=block_id
-            )
-
-            # Giữ nguyên xử lý Calendar hiện tại.
-            block.start_time = datetime.fromisoformat(
-                data.get('start')
-            )
-
-            block.end_time = datetime.fromisoformat(
-                data.get('end')
-            )
-
-            block.status = 'confirmed'
-
-            block.save()
-
-            return JsonResponse({
-                'status': 'success'
-            })
-
-    return JsonResponse(
-        {
-            'status': 'invalid request'
-        },
-        status=400
+    block = get_object_or_404(
+        ScheduleBlock,
+        id=block_id,
+        user=request.user,
+        is_fixed=False,
     )
+    start_value = data.get('start', '')
+    end_value = data.get('end', '')
+    if not isinstance(start_value, str) or not isinstance(end_value, str):
+        return JsonResponse(
+            {'status': 'error', 'message': 'Thời gian sự kiện không hợp lệ.'},
+            status=400,
+        )
+
+    start_time = parse_datetime(start_value)
+    end_time = parse_datetime(end_value)
+    if not start_time or not end_time:
+        return JsonResponse(
+            {'status': 'error', 'message': 'Khoảng thời gian không hợp lệ.'},
+            status=400,
+        )
+
+    if timezone.is_naive(start_time):
+        start_time = timezone.make_aware(start_time)
+    if timezone.is_naive(end_time):
+        end_time = timezone.make_aware(end_time)
+
+    if end_time <= start_time:
+        return JsonResponse(
+            {'status': 'error', 'message': 'Khoảng thời gian không hợp lệ.'},
+            status=400,
+        )
+
+    block.start_time = start_time
+    block.end_time = end_time
+    block.status = 'confirmed'
+    block.save(update_fields=['start_time', 'end_time', 'status'])
+
+    return JsonResponse({'status': 'success'})
 
 
 # ============================================================

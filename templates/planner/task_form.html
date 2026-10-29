@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Chỉnh sửa nhiệm vụ - AI Study Planner{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-2xl border border-gray-100 shadow-sm">
+    <div class="mb-6">
+        <h1 class="text-xl font-bold text-gray-900">
+            <i class="fa-solid fa-pen-to-square text-blue-600 mr-2"></i>
+            Chỉnh sửa deadline
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">{{ task.title }}</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                    <p class="text-red-600 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+            <a href="{% url 'task_list' %}" class="text-center px-4 py-2.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                Hủy
+            </a>
+            <button type="submit" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                Lưu thay đổi
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

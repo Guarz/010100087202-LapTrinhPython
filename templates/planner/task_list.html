@@ -9,7 +9,7 @@
             <i class="fa-solid fa-plus-circle text-blue-600"></i>
             <span>Thêm Deadline / Bài tập mới</span>
         </h2>
-        <form method="POST" class="space-y-3.5">
+        <form method="POST" enctype="multipart/form-data" class="space-y-3.5">
             {% csrf_token %}
             {% for field in form %}
                 <div>
@@ -42,7 +42,9 @@
                                 <span class="text-sm sm:text-base font-semibold {% if task.status == 'completed' %}line-through text-gray-400{% else %}text-gray-900{% endif %}">
                                     {{ task.title }}
                                 </span>
-                                {% if task.subject_name %}
+                                {% if task.course %}
+                                    <span class="bg-gray-100 text-gray-700 text-[11px] px-2 py-0.5 rounded font-medium">{{ task.course.name }}</span>
+                                {% elif task.subject_name %}
                                     <span class="bg-gray-100 text-gray-700 text-[11px] px-2 py-0.5 rounded font-medium">{{ task.subject_name }}</span>
                                 {% endif %}
                                 {% if task.priority == 1 %}
@@ -61,17 +63,31 @@
                                         <i class="fa-solid fa-link mr-1"></i> Tài liệu
                                     </a>
                                 {% endif %}
+                                {% if task.material_file %}
+                                    <a href="{% url 'download_study_material' task.id %}" class="text-blue-600 hover:underline flex items-center">
+                                        <i class="fa-solid fa-paperclip mr-1"></i> Tải tài liệu đính kèm
+                                    </a>
+                                {% endif %}
                             </div>
                         </div>
 
                         <!-- Thao tác nút bấm rộng rãi trên mobile -->
                         <div class="flex items-center justify-end space-x-2 pt-2 sm:pt-0 border-t sm:border-0 border-gray-100">
-                            <a href="{% url 'toggle_task_status' task.id %}" class="flex-1 sm:flex-none text-center px-4 py-2 text-xs font-semibold rounded-lg border {% if task.status == 'completed' %}border-gray-300 text-gray-600 hover:bg-gray-100{% else %}border-green-600 text-green-700 hover:bg-green-50{% endif %} transition">
-                                {% if task.status == 'completed' %}Làm lại{% else %}Xong{% endif %}
+                            <a href="{% url 'edit_task' task.id %}" class="px-3 py-2 text-xs font-semibold rounded-lg text-blue-700 hover:bg-blue-50 transition border border-blue-200">
+                                Sửa
                             </a>
-                            <a href="{% url 'delete_task' task.id %}" class="px-3 py-2 text-xs font-semibold rounded-lg text-red-600 hover:bg-red-50 transition border border-red-200 sm:border-transparent" onclick="return confirm('Bạn có chắc muốn xóa?')">
-                                <i class="fa-solid fa-trash"></i>
-                            </a>
+                            <form method="POST" action="{% url 'toggle_task_status' task.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="px-4 py-2 text-xs font-semibold rounded-lg border {% if task.status == 'completed' %}border-gray-300 text-gray-600 hover:bg-gray-100{% else %}border-green-600 text-green-700 hover:bg-green-50{% endif %} transition">
+                                    {% if task.status == 'completed' %}Làm lại{% else %}Xong{% endif %}
+                                </button>
+                            </form>
+                            <form method="POST" action="{% url 'delete_task' task.id %}" onsubmit="return confirm('Bạn có chắc muốn xóa?')">
+                                {% csrf_token %}
+                                <button type="submit" class="px-3 py-2 text-xs font-semibold rounded-lg text-red-600 hover:bg-red-50 transition border border-red-200 sm:border-transparent" aria-label="Xóa {{ task.title }}">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 {% endfor %}

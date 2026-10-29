@@ -1,7 +1,29 @@
 
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.utils import timezone
+
+
+MAX_STUDY_MATERIAL_SIZE = 10 * 1024 * 1024
+
+
+def study_material_upload_path(instance, filename):
+    extension = filename.rpartition('.')[2].lower()
+    safe_extension = (
+        f'.{extension}'
+        if extension.isalnum() and len(extension) <= 10
+        else ''
+    )
+    return f'study_materials/user_{instance.user_id}/{uuid.uuid4().hex}{safe_extension}'
+
+
+def validate_study_material_size(uploaded_file):
+    if uploaded_file.size > MAX_STUDY_MATERIAL_SIZE:
+        raise ValidationError('Tài liệu không được vượt quá 10 MB.')
 
 
 # ============================================================
@@ -77,6 +99,30 @@ class RecurringSchedule(models.Model):
         )
 
 
+class Course(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='courses'
+    )
+    code = models.CharField(max_length=20)
+    name = models.CharField(max_length=150)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'code'],
+                name='unique_course_code_per_user'
+            )
+        ]
+        ordering = ['code']
+
+    def __str__(self):
+        return f'{self.code} - {self.name}'
+
+
 # ============================================================
 # 03. TASK
 # GIỮ NGUYÊN - KHÔNG THUỘC PHẠM VI CHỈNH SỬA
@@ -99,6 +145,14 @@ class Task(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        related_name='tasks'
+    )
+
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='tasks'
     )
 
@@ -130,6 +184,23 @@ class Task(models.Model):
     material_url = models.URLField(
         blank=True,
         null=True
+    )
+
+    material_file = models.FileField(
+        upload_to=study_material_upload_path,
+        blank=True,
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt']
+            ),
+            validate_study_material_size,
+        ],
+    )
+
+    reminder_sent_for = models.DateTimeField(
+        null=True,
+        blank=True,
+        editable=False,
     )
 
     created_at = models.DateTimeField(
