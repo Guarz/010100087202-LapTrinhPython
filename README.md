@@ -4,6 +4,7 @@
 
 ## Mục lục
 
+- [Đối chiếu yêu cầu đề bài](#đối-chiếu-yêu-cầu-đề-bài-nhóm-4--web-4)
 - [Chức năng](#chức-năng)
 - [Luồng sử dụng](#luồng-sử-dụng)
 - [Công nghệ và yêu cầu](#công-nghệ-và-yêu-cầu)
@@ -15,6 +16,40 @@
 - [Cấu hình trợ lý AI](#cấu-hình-trợ-lý-ai)
 - [Kiểm thử](#kiểm-thử)
 - [Triển khai](#triển-khai)
+
+## Đối chiếu yêu cầu đề bài (Nhóm 4 – WEB 4)
+
+| Task | Yêu cầu | Đã làm trong mã nguồn | Demo |
+|---|---|---|---|
+| **T1** ERD, auth, khung ứng dụng | Model User/Course/Task/Event, migration, đăng nhập, seed | `planner/models.py` (Event = `ScheduleBlock`), 6 migration, `/login/`, `/register/`, trang CRUD môn học `/courses/`, lệnh `seed_demo_data` (4 môn, **8 task**, lịch bận tuần) | ERD bên dưới + trang đăng nhập |
+| **T2** Lịch, deadline, tài liệu, nhắc việc | CRUD sự kiện/deadline, giao diện lịch, đồng bộ .ics, gắn tài liệu, scheduler nhắc việc | FullCalendar kéo thả; **xuất .ics + link đăng ký tự cập nhật (`/calendar/feed/<token>.ics`) + nhập .ics**; tải file tài liệu; nhắc việc 3 lớp: chuông + thông báo trình duyệt trong app, email qua **Celery Beat (15 phút/lần)** hoặc lệnh `send_deadline_reminders` | Tạo task hạn < 24h → chuông đỏ + notification + email |
+| **T3** Thuật toán sinh kế hoạch tuần | Xếp lịch theo ưu tiên/thời lượng/lịch bận, cho chỉnh sửa, unit test | `planner/scheduler.py`: `compute_free_slots` + `plan_sessions` (hàm thuần), phiên ≤ 90 phút, nghỉ 10 phút, không vượt deadline, ≤ 4 giờ/ngày; kéo thả/sửa → `confirmed` và được giữ khi sinh lại; 9 unit test | `seed_demo_data` → **Lập lịch tuần** từ 8 task mẫu |
+| **T4** Pomodoro & UX | Bộ đếm, lưu phiên, thống kê, thông báo | Pomodoro Workspace (`/pomodoro/`), API lưu phiên/thống kê/heatmap, thông báo trình duyệt khi hết phiên | Chạy một phiên rồi xem thống kê |
+| **T5** AI phân bổ thời gian, cảnh báo trễ, deploy | Điểm rủi ro trễ hạn, AI tóm tắt ngày, kiểm thử, deploy | `planner/risk.py` (điểm 0–100, 5 thành phần), hiển thị trên Tổng quan + Trợ lý AI + `/api/risk/`; OpenAI tóm tắt ngày (có dự phòng khi không có key); 43 test; `render.yaml`, `Procfile` | Task gần hạn hiện **Rủi ro cao** kèm lý do |
+
+### Công nghệ theo yêu cầu
+
+| Yêu cầu | Trạng thái |
+|---|---|
+| Django (web thuần Python) | ✅ Django 6 + Django Templates, Tailwind CSS |
+| FastAPI cho API phụ trợ | ✅ `planner/fastapi_app.py`, gắn tại `/api/v2` (Swagger `/api/v2/docs`) qua `core/asgi.py` |
+| PostgreSQL | ✅ qua `DATABASE_URL` (Render/Supabase); SQLite khi chạy cục bộ không có biến này |
+| Redis/Celery cho background jobs | ✅ `core/celery.py`, `planner/tasks.py`, Beat gửi nhắc deadline |
+| OpenAI/Claude hỗ trợ | ✅ OpenAI (`OPENAI_API_KEY`), không bắt buộc |
+| Deploy Render/Fly.io/Railway | ✅ `render.yaml` (web + Postgres + Redis + worker), `Procfile` (Railway) |
+
+### Công thức điểm rủi ro trễ hạn (T5)
+
+```
+remaining = estimated_minutes − phút Pomodoro đã tập trung
+capacity  = min(phút còn lại tới hạn, max(240, giờ_còn_lại/24 × 240))
+score = 50 × min(remaining / capacity, 1)        # áp lực thời gian
+      + 20 (≤24h) | 12 (≤72h) | 6 (≤7 ngày)       # độ gấp
+      + 10 (ưu tiên cao) | 5 (trung bình)
+      + 10 nếu chưa bắt đầu và còn ≤ 72h
+      + 10 × tỉ lệ khối lượng chưa được xếp lịch
+Đã xong = 0, quá hạn = 100. ≥ 70: cao, ≥ 40: trung bình.
+```
 
 ## Chức năng
 
@@ -71,7 +106,7 @@
 2. Tạo nhiệm vụ trên trang chủ (`/`); nếu đã có khóa học, có thể chọn khóa học trong biểu mẫu. Có thể nhập đường dẫn tài liệu hoặc tải file; file chỉ người sở hữu nhiệm vụ mới truy cập được.
 3. Khai báo các lịch học/lịch bận định kỳ tại `/recurring/`.
 4. Mở `/calendar/` để xem deadline và lịch; dùng chức năng lập lịch tự động nếu muốn tạo các khối học trong tuần.
-   Dùng nút **Xuất lịch .ics** để tải deadline và sự kiện của tài khoản về máy, sau đó nhập tệp vào Google Calendar, Outlook hoặc ứng dụng hỗ trợ iCalendar. Xuất lại tệp sau khi có thay đổi; tệp không tự cập nhật theo thời gian thực.
+   Bấm **Đồng bộ .ics** để: sao chép link đăng ký lịch (dán vào Google Calendar → *Thêm lịch → Từ URL*; lịch tự cập nhật), tải tệp `.ics`, hoặc nhập tệp `.ics` (thời khóa biểu, lịch thi) thành lịch bận cố định.
 5. Mở `/pomodoro/`, chọn nhiệm vụ hoặc Quick Goal, bắt đầu tập trung; khi kết thúc hoặc gác lại, phiên được gửi tới API để kiểm tra và lưu.
 6. Xem thống kê/heatmap trong giao diện Pomodoro; các API chỉ trả dữ liệu thuộc người dùng hiện tại.
 7. Mở `/ai-assistant/` để xem phân tích lịch học.
@@ -103,7 +138,8 @@ EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
 
 - Python 3 (khuyến nghị Python 3.12 trở lên) và pip.
 - Django; phiên bản trong danh sách phụ thuộc hiện được ghim là Django 6.1.2.
-- PostgreSQL; cấu hình hiện tại của dự án hướng tới Supabase.
+- PostgreSQL qua biến `DATABASE_URL` (Supabase/Render); không đặt thì dùng SQLite cục bộ.
+- Redis + Celery (tùy chọn) cho nhắc deadline định kỳ; FastAPI cho API phụ trợ.
 - OpenAI API là tùy chọn.
 - Giao diện: Django Templates, HTML, CSS, JavaScript và các tài nguyên giao diện có trong `static/`.
 
@@ -131,11 +167,13 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-Trước khi chạy migration, cấu hình database PostgreSQL/Supabase mà môi trường của bạn được phép truy cập. Không chia sẻ thông tin kết nối hoặc đưa thông tin xác thực vào Git.
+Sao chép `.env.example` thành `.env`. Để trống `DATABASE_URL` sẽ dùng SQLite cục bộ; muốn dùng PostgreSQL/Supabase thì điền URL vào `.env` (không commit tệp này).
 
 ```bash
 python manage.py migrate
-python manage.py runserver
+python manage.py seed_demo_data --username demo --create-user   # tài khoản demo / demo12345
+python manage.py runserver            # chỉ Django
+uvicorn core.asgi:application --reload # Django + FastAPI (/api/v2/docs)
 ```
 
 Mở [http://127.0.0.1:8000/](http://127.0.0.1:8000/). Tạo tài khoản quản trị Django nếu cần dùng trang Admin:
@@ -152,7 +190,7 @@ python manage.py createsuperuser
 python manage.py seed_demo_data --username ten_dang_nhap
 ```
 
-Nếu bỏ `--username`, lệnh chọn tài khoản đầu tiên trong cơ sở dữ liệu. Lệnh tạo 3 khóa học, 3 nhiệm vụ và 2 khối lịch cho tài khoản đó; có thể chạy lại mà không tạo trùng dữ liệu mẫu. Lệnh không tạo tài khoản mới. Nếu chưa có tài khoản, lệnh báo lỗi và dừng.
+Nếu bỏ `--username`, lệnh chọn tài khoản đầu tiên trong cơ sở dữ liệu. Lệnh tạo 4 khóa học, 8 nhiệm vụ mẫu (dùng cho demo thuật toán xếp lịch), 5 lịch bận lặp lại và 2 khối lịch cho tài khoản đó; thêm `--create-user` để tự tạo tài khoản nếu chưa có; có thể chạy lại mà không tạo trùng dữ liệu mẫu. Lệnh không tạo tài khoản mới. Nếu chưa có tài khoản, lệnh báo lỗi và dừng.
 
 ## ERD và mô hình dữ liệu
 
@@ -251,13 +289,20 @@ Mỗi khóa học thuộc một người dùng; mã khóa học (`code`) là duy
 | `/api/calendar-events/` | GET | Dữ liệu sự kiện cho lịch |
 | `/api/update-block-time/` | POST | Cập nhật thời gian khối lịch sau thao tác kéo thả |
 | `/recurring/` | GET/POST | Danh sách và biểu mẫu lịch lặp lại |
-| `/recurring/<id>/delete/` | GET | Xóa lịch lặp lại |
-| `/auto-schedule/` | GET | Chạy lập lịch học tự động rồi chuyển về lịch |
+| `/recurring/<id>/delete/` | POST | Xóa lịch lặp lại (chỉ chủ sở hữu) |
+| `/auto-schedule/` | POST | Chạy lập lịch học tự động rồi chuyển về lịch |
 | `/pomodoro/` | GET | Giao diện Pomodoro |
 | `/api/save-pomodoro/` | POST JSON | Kiểm tra và lưu phiên Pomodoro |
 | `/api/pomodoro-statistics/` | GET | Tổng thời gian, phiên hoàn thành và streak |
 | `/api/pomodoro-heatmap/` | GET | Tổng thời gian tập trung theo ngày |
 | `/ai-assistant/` | GET | Phân tích lịch học và deadline |
+| `/courses/` | GET/POST | Danh sách và thêm môn học |
+| `/courses/<id>/delete/` | POST | Xóa môn học |
+| `/calendar/feed/<token>.ics` | GET | Link đăng ký lịch (không cần đăng nhập, bảo vệ bằng token) |
+| `/calendar/import/` | POST | Nhập tệp .ics thành lịch bận |
+| `/calendar/feed/reset/` | POST | Tạo token đăng ký lịch mới |
+| `/api/risk/` | GET | Điểm rủi ro trễ hạn của các task đang mở |
+| `/api/v2/health`, `/api/v2/risk`, `/api/v2/plan` | GET/POST | API phụ trợ FastAPI (tính rủi ro, xếp lịch thử) |
 | `/admin/` | GET | Trang quản trị Django |
 
 Các thao tác CRUD deadline/sự kiện và API lịch yêu cầu đăng nhập; cập nhật lịch bằng kéo thả cần CSRF hợp lệ. Task và sự kiện chỉ được sửa/xóa bởi chủ sở hữu. API lưu Pomodoro cần JSON hợp lệ và trạng thái `completed` hoặc `deferred`; phiên mới cần `session_uuid`. API thống kê chỉ tính phiên hoàn thành và chỉ trả dữ liệu của tài khoản hiện tại.
@@ -337,8 +382,23 @@ Không ghi API key, mật khẩu hoặc URL database có thông tin xác thực 
 python manage.py test
 ```
 
-Các test hiện có kiểm tra đăng nhập, quyền lựa chọn khóa học của biểu mẫu, xử lý tên môn học và các trường hợp seed dữ liệu. Khi chạy kiểm thử trong môi trường không có PostgreSQL, có thể cấu hình database SQLite tạm cho môi trường test; lệnh triển khai thông thường vẫn dùng database được thiết lập cho ứng dụng.
+43 test bao gồm: đăng nhập, seed, quyền sở hữu dữ liệu, upload tài liệu, nhắc email (lệnh + Celery), xuất/đăng ký/nhập .ics, **thuật toán xếp lịch** (ưu tiên, chia phiên, deadline, giới hạn/ngày, không chồng lịch với 8 task mẫu), **điểm rủi ro** và API FastAPI. Không đặt `DATABASE_URL` thì test chạy trên SQLite.
 
 ## Triển khai
 
-`build.sh` thực hiện cài dependencies, `collectstatic` và `migrate`. Trước khi triển khai production, cần đặt `SECRET_KEY` an toàn, tắt `DEBUG`, giới hạn `ALLOWED_HOSTS`, cấu hình database/SSL và kiểm tra checklist bảo mật của Django. Không sử dụng cấu hình phát triển mặc định cho môi trường công khai.
+### Render (khuyến nghị)
+
+1. Đẩy mã lên GitHub.
+2. Render Dashboard → **New → Blueprint** → chọn repo. `render.yaml` tạo: web service (uvicorn chạy Django + FastAPI), PostgreSQL, Redis và worker Celery.
+3. Điền `OPENAI_API_KEY` (tùy chọn). `SECRET_KEY` được sinh tự động, `DEBUG=false`.
+4. Sau khi deploy: mở Shell của web service và chạy `python manage.py seed_demo_data --username demo --create-user` để có dữ liệu demo.
+
+Gói free của Render không có background worker: xóa service worker trong `render.yaml` và tạo **Cron Job** chạy `python manage.py send_deadline_reminders` mỗi 15 phút.
+
+### Railway / Fly.io
+
+`Procfile` có sẵn tiến trình `web`, `worker` và `release` (migrate). Thêm plugin PostgreSQL + Redis rồi đặt các biến trong `.env.example`.
+
+### Biến môi trường
+
+Xem `.env.example`: `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `DATABASE_URL`, `REDIS_URL`, `OPENAI_API_KEY`, `REMINDER_HOURS_BEFORE`, cấu hình SMTP.

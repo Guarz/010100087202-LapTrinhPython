@@ -307,8 +307,9 @@ class AuthenticationAndSeedTests(TestCase):
         call_command('seed_demo_data', username=user.username)
         call_command('seed_demo_data', username=user.username)
 
-        self.assertEqual(Course.objects.filter(user=user).count(), 3)
-        self.assertEqual(Task.objects.filter(user=user).count(), 3)
+        self.assertEqual(Course.objects.filter(user=user).count(), 4)
+        self.assertEqual(Task.objects.filter(user=user).count(), 8)
+        self.assertEqual(RecurringSchedule.objects.filter(user=user).count(), 5)
         self.assertEqual(ScheduleBlock.objects.filter(user=user).count(), 2)
 
     def test_seed_command_requires_an_existing_user(self):
@@ -602,3 +603,263 @@ class CalendarIcsExportTests(TestCase):
             response,
             '/login/?next=/calendar/export.ics'
         )
+
+
+# ============================================================
+# TASK 3 - THUẬT TOÁN SINH KẾ HOẠCH TUẦN
+# ============================================================
+
+from datetime import datetime as _dt, time as _time, timezone as _dt_timezone  # noqa: E402
+
+from .models import RecurringSchedule, UserProfile, PomodoroLog  # noqa: E402
+from .risk import calculate_risk, assess_task  # noqa: E402
+from .scheduler import (  # noqa: E402
+    PlanTask, compute_free_slots, generate_weekly_plan, plan_sessions,
+)
+
+
+def _aware(day, hour, minute=0):
+    return timezone.make_aware(_dt.combine(day, _time(hour, minute)))
+
+
+class PlanSessionsUnitTests(TestCase):
+    def setUp(self):
+        self.day = timezone.localdate() + timedelta(days=1)
+
+    def test_higher_priority_is_scheduled_first(self):
+        slots = [[_aware(self.day, 8), _aware(self.day, 10, 30)]]
+        low = PlanTask('low', 'Thấp', 60, _aware(self.day + timedelta(days=3), 0), 3)
+        high = PlanTask('high', 'Cao', 60, _aware(self.day + timedelta(days=3), 0), 1)
+        sessions, unscheduled = plan_sessions([low, high], slots)
+        self.assertEqual([s.task.key for s in sessions], ['high', 'low'])
+        self.assertEqual(unscheduled, {})
+
+    def test_long_task_is_split_into_max_90_minute_sessions_with_breaks(self):
+        slots = [[_aware(self.day, 8), _aware(self.day, 12)]]
+        task = PlanTask('t', 'Dài', 150, _aware(self.day + timedelta(days=2), 0))
+        sessions, _ = plan_sessions([task], slots)
+        self.assertEqual([s.minutes for s in sessions], [90, 60])
+        self.assertEqual(sessions[1].start - sessions[0].end, timedelta(minutes=10))
+
+    def test_no_tiny_leftover_session(self):
+        slots = [[_aware(self.day, 8), _aware(self.day, 12)]]
+        task = PlanTask('t', 'Lẻ', 100, _aware(self.day + timedelta(days=2), 0))
+        sessions, _ = plan_sessions([task], slots)
+        self.assertEqual([s.minutes for s in sessions], [75, 25])
+
+    def test_daily_study_cap_spreads_work_across_days(self):
+        next_day = self.day + timedelta(days=1)
+        slots = [
+            [_aware(self.day, 6), _aware(self.day, 22)],
+            [_aware(next_day, 6), _aware(next_day, 22)],
+        ]
+        task = PlanTask('t', 'Lớn', 360, _aware(self.day + timedelta(days=3), 0))
+        sessions, unscheduled = plan_sessions([task], slots)
+        self.assertEqual(unscheduled, {})
+        first_day = sum(s.minutes for s in sessions if timezone.localtime(s.start).date() == self.day)
+        self.assertEqual(first_day, 240)
+
+    def test_session_never_ends_after_deadline(self):
+        slots = [[_aware(self.day, 8), _aware(self.day, 12)]]
+        task = PlanTask('t', 'Gấp', 120, _aware(self.day, 9))
+        sessions, unscheduled = plan_sessions([task], slots)
+        self.assertEqual(len(sessions), 1)
+        self.assertLessEqual(sessions[0].end, task.deadline)
+        self.assertEqual(unscheduled, {'t': 60})
+
+    def test_urgent_low_priority_task_still_uses_earlier_free_slot(self):
+        """Task ưu tiên cao nhưng hạn xa không được chiếm hết slot của task gấp."""
+        slots = [
+            [_aware(self.day, 8), _aware(self.day, 9)],
+            [_aware(self.day, 14), _aware(self.day, 18)],
+        ]
+        far_high = PlanTask('far', 'Xa', 60, _aware(self.day + timedelta(days=5), 0), 1)
+        urgent_low = PlanTask('urgent', 'Gấp', 60, _aware(self.day, 16), 3)
+        sessions, unscheduled = plan_sessions([far_high, urgent_low], slots)
+        self.assertEqual(unscheduled, {})
+        urgent = [s for s in sessions if s.task.key == 'urgent'][0]
+        self.assertLessEqual(urgent.end, urgent_low.deadline)
+
+    def test_free_slots_skip_busy_blocks_and_sleep(self):
+        now = _aware(self.day - timedelta(days=1), 23, 30)
+        busy = [(_aware(self.day, 8), _aware(self.day, 11))]
+        slots = compute_free_slots(busy, self.day, 0, _time(6, 0), _time(23, 0), now)
+        self.assertEqual(slots, [
+            [_aware(self.day, 6), _aware(self.day, 8)],
+            [_aware(self.day, 11), _aware(self.day, 23)],
+        ])
+
+
+class WeeklyPlanIntegrationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('planner', password='pass12345')
+        call_command('seed_demo_data', username='planner', stdout=io.StringIO())
+
+    def test_generates_plan_from_eight_sample_tasks_without_overlap(self):
+        self.assertEqual(Task.objects.filter(user=self.user).count(), 8)
+        result = generate_weekly_plan(self.user)
+        self.assertGreater(result['created'], 0)
+
+        blocks = list(ScheduleBlock.objects.filter(user=self.user))
+        suggested = [b for b in blocks if b.status == 'suggested']
+        for block in suggested:
+            self.assertLessEqual(block.end_time, block.task.deadline)
+            self.assertLessEqual(block.end_time - block.start_time, timedelta(minutes=90))
+            for other in blocks:
+                if other.pk != block.pk:
+                    overlaps = block.start_time < other.end_time and other.start_time < block.end_time
+                    self.assertFalse(overlaps, f'{block} chồng {other}')
+
+    def test_regenerating_keeps_user_edited_blocks(self):
+        generate_weekly_plan(self.user)
+        edited = ScheduleBlock.objects.filter(user=self.user, status='suggested').first()
+        edited.status = 'confirmed'
+        edited.save()
+        generate_weekly_plan(self.user)
+        self.assertTrue(ScheduleBlock.objects.filter(pk=edited.pk).exists())
+
+    def test_auto_schedule_requires_post_and_login(self):
+        self.assertEqual(Client().post('/auto-schedule/').status_code, 302)
+        client = Client()
+        client.force_login(self.user)
+        self.assertEqual(client.get('/auto-schedule/').status_code, 405)
+        self.assertRedirects(client.post('/auto-schedule/'), '/calendar/')
+
+
+# ============================================================
+# TASK 5 - ĐIỂM RỦI RO TRỄ HẠN
+# ============================================================
+
+class RiskScoreTests(TestCase):
+    def test_completed_task_has_zero_risk(self):
+        self.assertEqual(calculate_risk(hours_left=5, estimated_minutes=60, status='completed').score, 0)
+
+    def test_overdue_task_has_max_risk(self):
+        result = calculate_risk(hours_left=-1, estimated_minutes=60)
+        self.assertEqual((result.score, result.level), (100, 'high'))
+
+    def test_near_deadline_large_task_is_high_risk(self):
+        result = calculate_risk(hours_left=6, estimated_minutes=300, priority=1)
+        self.assertEqual(result.level, 'high')
+        self.assertTrue(result.reasons)
+
+    def test_far_deadline_small_task_is_low_risk(self):
+        result = calculate_risk(hours_left=24 * 10, estimated_minutes=60,
+                                scheduled_minutes=60, priority=3)
+        self.assertEqual(result.level, 'low')
+
+    def test_focus_time_and_scheduling_reduce_risk(self):
+        base = calculate_risk(hours_left=30, estimated_minutes=240)
+        better = calculate_risk(hours_left=30, estimated_minutes=240,
+                                focused_minutes=120, scheduled_minutes=120)
+        self.assertLess(better.score, base.score)
+
+    def test_assess_task_uses_pomodoro_and_blocks(self):
+        user = User.objects.create_user('risk', password='pass12345')
+        now = timezone.now()
+        task = Task.objects.create(user=user, title='Báo cáo', deadline=now + timedelta(hours=10),
+                                   estimated_minutes=120, priority=1)
+        before = assess_task(task, now)
+        PomodoroLog.objects.create(user=user, task=task, status='completed', actual_seconds=3600)
+        ScheduleBlock.objects.create(user=user, task=task, title='Học',
+                                     start_time=now + timedelta(hours=1),
+                                     end_time=now + timedelta(hours=2))
+        after = assess_task(task, now)
+        self.assertEqual(after.remaining_minutes, 60)
+        self.assertLess(after.score, before.score)
+
+    def test_risk_api_and_ai_page_show_scores(self):
+        user = User.objects.create_user('riskapi', password='pass12345')
+        Task.objects.create(user=user, title='Gần hạn', deadline=timezone.now() + timedelta(hours=3),
+                            estimated_minutes=200, priority=1)
+        client = Client()
+        client.force_login(user)
+        data = client.get('/api/risk/').json()['tasks']
+        self.assertEqual(data[0]['level'], 'high')
+        page = client.get('/ai-assistant/')
+        self.assertContains(page, 'Gần hạn')
+        self.assertContains(page, 'Rủi ro cao')
+
+
+# ============================================================
+# TASK 2 - ĐỒNG BỘ .ICS VÀ NHẮC VIỆC
+# ============================================================
+
+class IcsSyncAndReminderTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('sync', email='s@example.com', password='pass12345')
+        self.client.force_login(self.user)
+
+    def test_subscription_feed_works_without_login_only_with_valid_token(self):
+        profile = UserProfile.objects.create(user=self.user)
+        Task.objects.create(user=self.user, title='Deadline feed',
+                            deadline=timezone.now() + timedelta(days=1), estimated_minutes=30)
+        anonymous = Client()
+        response = anonymous.get(f'/calendar/feed/{profile.calendar_token}.ics')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Deadline feed', response.content.decode())
+        missing = anonymous.get('/calendar/feed/00000000-0000-0000-0000-000000000000.ics')
+        self.assertEqual(missing.status_code, 404)
+
+    def test_import_ics_creates_fixed_busy_blocks(self):
+        start = (timezone.now() + timedelta(days=2)).astimezone(_dt_timezone.utc)
+        stamp = start.strftime('%Y%m%dT%H%M%SZ')
+        end = (start + timedelta(hours=2)).strftime('%Y%m%dT%H%M%SZ')
+        ics = (
+            'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:1\r\n'
+            f'DTSTART:{stamp}\r\nDTEND:{end}\r\nSUMMARY:Thi giữa kỳ\\, phòng A1\r\n'
+            'END:VEVENT\r\nEND:VCALENDAR\r\n'
+        )
+        upload = SimpleUploadedFile('lich.ics', ics.encode(), content_type='text/calendar')
+        response = self.client.post('/calendar/import/', {'ics_file': upload})
+        self.assertRedirects(response, '/calendar/')
+        block = ScheduleBlock.objects.get(user=self.user)
+        self.assertTrue(block.is_fixed)
+        self.assertEqual(block.title, 'Lịch nhập: Thi giữa kỳ, phòng A1')
+        self.assertEqual(block.end_time - block.start_time, timedelta(hours=2))
+
+    def test_navbar_shows_in_app_reminder_for_upcoming_deadline(self):
+        Task.objects.create(user=self.user, title='Sắp hết hạn',
+                            deadline=timezone.now() + timedelta(hours=5), estimated_minutes=30)
+        response = self.client.get('/')
+        self.assertEqual(response.context['reminder_count'], 1)
+        self.assertContains(response, 'Sắp hết hạn')
+
+    def test_celery_task_runs_reminder_command(self):
+        from .tasks import send_deadline_reminders_task
+        Task.objects.create(user=self.user, title='Nhắc qua Celery',
+                            deadline=timezone.now() + timedelta(hours=2), estimated_minutes=30)
+        output = send_deadline_reminders_task.delay().get()
+        self.assertIn('Sent: 1', output)
+        self.assertEqual(len(mail.outbox), 1)
+
+
+class RecurringOwnershipTests(TestCase):
+    def test_user_cannot_delete_other_users_recurring_schedule(self):
+        owner = User.objects.create_user('owner', password='pass12345')
+        other = User.objects.create_user('other', password='pass12345')
+        rec = RecurringSchedule.objects.create(user=owner, title='Lớp', day_of_week=0,
+                                               start_time=_time(7), end_time=_time(9))
+        client = Client()
+        client.force_login(other)
+        self.assertEqual(client.post(f'/recurring/{rec.id}/delete/').status_code, 404)
+        self.assertEqual(client.get(f'/recurring/{rec.id}/delete/').status_code, 405)
+        self.assertTrue(RecurringSchedule.objects.filter(pk=rec.pk).exists())
+
+
+class FastApiAuxiliaryTests(TestCase):
+    def test_risk_and_plan_endpoints(self):
+        from fastapi.testclient import TestClient
+        from .fastapi_app import api
+
+        client = TestClient(api)
+        self.assertEqual(client.get('/health').json(), {'status': 'ok'})
+        risk = client.post('/risk', json={'hours_left': 4, 'estimated_minutes': 240, 'priority': 1}).json()
+        self.assertEqual(risk['level'], 'high')
+
+        day = timezone.localdate() + timedelta(days=1)
+        plan = client.post('/plan', json={
+            'tasks': [{'title': 'A', 'minutes': 120, 'deadline': _aware(day, 23).isoformat()}],
+            'free_slots': [{'start': _aware(day, 8).isoformat(), 'end': _aware(day, 12).isoformat()}],
+        }).json()
+        self.assertEqual([s['minutes'] for s in plan['sessions']], [90, 30])

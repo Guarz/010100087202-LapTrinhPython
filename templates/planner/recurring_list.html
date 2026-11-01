@@ -1,63 +1,85 @@
 <!-- templates/planner/recurring_list.html -->
 {% extends 'base.html' %}
 
-{% block title %}Lịch Bận Cố Định - AI Planner{% endblock %}
+{% block title %}Lịch bận cố định - StudyPlanner{% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-    <!-- Form nhập lịch cố định -->
-    <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
-        <h2 class="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
-            <i class="fa-solid fa-calendar-plus text-indigo-600"></i>
-            <span>Thêm Lịch Bận / Ca Cố Định</span>
-        </h2>
-        <form method="POST" class="space-y-3.5">
-            {% csrf_token %}
-            {% for field in form %}
-                <div>
-                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
-                    {{ field }}
-                </div>
-            {% endfor %}
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition duration-200 shadow-sm mt-2 text-sm sm:text-base">
-                Lưu vào thời khóa biểu
-            </button>
-        </form>
+<div class="space-y-6">
+    <div>
+        <h1 class="page-title">Lịch bận cố định</h1>
+        <p class="page-sub">Thời khóa biểu, ca làm thêm và giờ ngủ — thuật toán xếp lịch sẽ tránh các khung giờ này.</p>
     </div>
 
-    <!-- Danh sách lịch cố định -->
-    <div class="lg:col-span-2 space-y-4">
-        <div class="flex justify-between items-center px-1">
-            <h2 class="text-lg sm:text-xl font-bold text-gray-900">Thời khóa biểu lặp lại hàng tuần</h2>
-            <span class="text-xs sm:text-sm bg-indigo-100 text-indigo-800 py-1 px-3 rounded-full font-medium">{{ schedules.count }} khung giờ</span>
-        </div>
-
-        {% if schedules %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {% for item in schedules %}
-                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <aside class="space-y-6">
+            <div class="card card-pad">
+                <h2 class="section-title mb-4"><i class="fa-solid fa-calendar-plus text-brand-500"></i>Thêm lịch bận</h2>
+                <form method="POST" class="space-y-3.5">
+                    {% csrf_token %}
+                    {% for field in form %}
                         <div>
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
-                                {{ item.get_day_of_week_display }}
-                            </span>
-                            <h3 class="font-bold text-gray-900 mt-1 text-sm sm:text-base">{{ item.title }}</h3>
-                            <p class="text-xs text-gray-500 mt-1">
-                                <i class="fa-regular fa-clock mr-1 text-gray-400"></i>
-                                {{ item.start_time|time:"H:i" }} - {{ item.end_time|time:"H:i" }}
-                            </p>
+                            <label for="{{ field.id_for_label }}" class="label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<p class="mt-1 text-xs text-rose-600">{{ field.errors.0 }}</p>{% endif %}
                         </div>
-                        <a href="{% url 'delete_recurring' item.id %}" class="text-gray-400 hover:text-red-500 p-2" onclick="return confirm('Xóa khung giờ này?')">
-                            <i class="fa-solid fa-trash"></i>
-                        </a>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                    <button type="submit" class="btn-primary w-full">Lưu vào thời khóa biểu</button>
+                </form>
             </div>
-        {% else %}
-            <div class="bg-white p-8 sm:p-12 text-center rounded-2xl border border-dashed border-gray-300">
-                <i class="fa-solid fa-business-time text-4xl text-gray-400 mb-2"></i>
-                <p class="text-sm text-gray-500 font-medium">Chưa có lịch bận nào.</p>
+
+            <div class="card card-pad">
+                <h2 class="section-title mb-4"><i class="fa-regular fa-moon text-violet-500"></i>Khung giờ ngủ / học</h2>
+                <form method="POST" class="space-y-3.5">
+                    {% csrf_token %}
+                    <input type="hidden" name="form" value="hours">
+                    {% for field in hours_form %}
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<p class="mt-1 text-xs text-rose-600">{{ field.errors.0 }}</p>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn-secondary w-full">Lưu khung giờ</button>
+                </form>
             </div>
-        {% endif %}
+        </aside>
+
+        <section class="lg:col-span-2 space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="section-title"><i class="fa-solid fa-business-time text-brand-500"></i>Lặp lại hàng tuần</h2>
+                <span class="badge bg-brand-50 text-brand-700">{{ schedules.count }} khung giờ</span>
+            </div>
+
+            {% if schedules %}
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {% for item in schedules %}
+                        <div class="card flex items-start justify-between p-4">
+                            <div class="flex gap-3">
+                                <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-sm
+                                    {% if item.category == 'part_time' %}bg-amber-50 text-amber-600{% elif item.category == 'personal' %}bg-emerald-50 text-emerald-600{% else %}bg-brand-50 text-brand-600{% endif %}">
+                                    <i class="fa-solid {% if item.category == 'part_time' %}fa-briefcase{% elif item.category == 'personal' %}fa-user{% else %}fa-school{% endif %}"></i>
+                                </span>
+                                <div>
+                                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ item.get_day_of_week_display }}</p>
+                                    <h3 class="font-semibold text-slate-900">{{ item.title }}</h3>
+                                    <p class="text-xs text-slate-500"><i class="fa-regular fa-clock mr-1"></i>{{ item.start_time|time:"H:i" }} – {{ item.end_time|time:"H:i" }}</p>
+                                </div>
+                            </div>
+                            <form method="POST" action="{% url 'delete_recurring' item.id %}" onsubmit="return confirm('Xóa khung giờ này?')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-danger btn-sm" aria-label="Xóa"><i class="fa-solid fa-trash"></i></button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="card flex flex-col items-center px-6 py-14 text-center">
+                    <span class="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-2xl text-brand-500"><i class="fa-solid fa-business-time"></i></span>
+                    <p class="mt-4 font-semibold text-slate-800">Chưa có lịch bận nào</p>
+                    <p class="mt-1 text-sm text-slate-500">Thêm lịch học trên lớp hoặc ca làm để AI xếp lịch chính xác hơn.</p>
+                </div>
+            {% endif %}
+        </section>
     </div>
 </div>
 {% endblock %}

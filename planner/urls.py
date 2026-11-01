@@ -312,4 +312,16 @@ urlpatterns = [
         name='ai_assistant_view'
     ),
 
+
+    # ========================================================
+    # BỔ SUNG: COURSE, ĐỒNG BỘ .ICS, RỦI RO TRỄ HẠN
+    # ========================================================
+
+    path('courses/', views.course_list, name='course_list'),
+    path('courses/<int:course_id>/delete/', views.delete_course, name='delete_course'),
+    path('calendar/feed/<uuid:token>.ics', views.calendar_feed, name='calendar_feed'),
+    path('calendar/import/', views.import_calendar_ics, name='import_calendar_ics'),
+    path('calendar/feed/reset/', views.reset_calendar_token, name='reset_calendar_token'),
+    path('api/risk/', views.risk_api, name='risk_api'),
 ]
+

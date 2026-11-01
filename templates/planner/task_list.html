@@ -1,103 +1,199 @@
 <!-- templates/planner/task_list.html -->
 {% extends 'base.html' %}
+{% load planner_extras %}
+
+{% block title %}Tổng quan - StudyPlanner{% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-    <!-- Cột 1: Form Thêm Task -->
-    <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
-        <h2 class="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
-            <i class="fa-solid fa-plus-circle text-blue-600"></i>
-            <span>Thêm Deadline / Bài tập mới</span>
-        </h2>
-        <form method="POST" enctype="multipart/form-data" class="space-y-3.5">
-            {% csrf_token %}
-            {% for field in form %}
-                <div>
-                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
-                    {% endif %}
-                </div>
-            {% endfor %}
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition duration-200 shadow-sm mt-2 text-sm sm:text-base">
-                Lưu bài tập
-            </button>
-        </form>
+<div class="space-y-6">
+    <!-- Lời chào + hành động nhanh -->
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <p class="text-sm font-medium text-brand-600">{% now "l, d/m/Y" %}</p>
+            <h1 class="page-title">Xin chào, {{ user.username }} 👋</h1>
+            <p class="page-sub">Theo dõi deadline, rủi ro trễ hạn và kế hoạch học hôm nay.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="#new-task" class="btn-primary"><i class="fa-solid fa-plus"></i>Thêm nhiệm vụ</a>
+            <form method="POST" action="{% url 'trigger_auto_schedule' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-secondary"><i class="fa-solid fa-wand-magic-sparkles text-violet-500"></i>Lập lịch tuần</button>
+            </form>
+        </div>
     </div>
 
-    <!-- Cột 2 & 3: Danh Sách Deadline -->
-    <div class="lg:col-span-2 space-y-4">
-        <div class="flex justify-between items-center px-1">
-            <h2 class="text-lg sm:text-xl font-bold text-gray-900">Danh sách bài tập & hạn nộp</h2>
-            <span class="text-xs sm:text-sm bg-blue-100 text-blue-800 py-1 px-3 rounded-full font-medium">Tổng: {{ tasks.count }}</span>
+    <!-- Thống kê -->
+    <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <div class="card p-4 sm:p-5">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500">Đang mở</span>
+                <span class="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600"><i class="fa-solid fa-list-check text-sm"></i></span>
+            </div>
+            <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ stats.open }}</p>
+            <p class="text-xs text-slate-400">nhiệm vụ chưa xong</p>
         </div>
-
-        {% if tasks %}
-            <div class="space-y-3">
-                {% for task in tasks %}
-                    <div class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border {% if task.status == 'completed' %}border-green-200 bg-green-50/30{% else %}border-gray-200{% endif %} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div class="space-y-1.5 flex-1">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="text-sm sm:text-base font-semibold {% if task.status == 'completed' %}line-through text-gray-400{% else %}text-gray-900{% endif %}">
-                                    {{ task.title }}
-                                </span>
-                                {% if task.course %}
-                                    <span class="bg-gray-100 text-gray-700 text-[11px] px-2 py-0.5 rounded font-medium">{{ task.course.name }}</span>
-                                {% elif task.subject_name %}
-                                    <span class="bg-gray-100 text-gray-700 text-[11px] px-2 py-0.5 rounded font-medium">{{ task.subject_name }}</span>
-                                {% endif %}
-                                {% if task.priority == 1 %}
-                                    <span class="bg-red-100 text-red-700 text-[11px] px-2 py-0.5 rounded font-medium">Ưu tiên cao</span>
-                                {% elif task.priority == 2 %}
-                                    <span class="bg-amber-100 text-amber-700 text-[11px] px-2 py-0.5 rounded font-medium">Trung bình</span>
-                                {% else %}
-                                    <span class="bg-blue-100 text-blue-700 text-[11px] px-2 py-0.5 rounded font-medium">Thấp</span>
-                                {% endif %}
-                            </div>
-                            <div class="text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-1 pt-0.5">
-                                <span><i class="fa-regular fa-clock mr-1 text-red-500"></i> {{ task.deadline|date:"H:i - d/m/Y" }}</span>
-                                <span><i class="fa-solid fa-hourglass-half mr-1 text-gray-400"></i> {{ task.estimated_minutes }} phút</span>
-                                {% if task.material_url %}
-                                    <a href="{{ task.material_url }}" target="_blank" class="text-blue-600 hover:underline flex items-center">
-                                        <i class="fa-solid fa-link mr-1"></i> Tài liệu
-                                    </a>
-                                {% endif %}
-                                {% if task.material_file %}
-                                    <a href="{% url 'download_study_material' task.id %}" class="text-blue-600 hover:underline flex items-center">
-                                        <i class="fa-solid fa-paperclip mr-1"></i> Tải tài liệu đính kèm
-                                    </a>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Thao tác nút bấm rộng rãi trên mobile -->
-                        <div class="flex items-center justify-end space-x-2 pt-2 sm:pt-0 border-t sm:border-0 border-gray-100">
-                            <a href="{% url 'edit_task' task.id %}" class="px-3 py-2 text-xs font-semibold rounded-lg text-blue-700 hover:bg-blue-50 transition border border-blue-200">
-                                Sửa
-                            </a>
-                            <form method="POST" action="{% url 'toggle_task_status' task.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="px-4 py-2 text-xs font-semibold rounded-lg border {% if task.status == 'completed' %}border-gray-300 text-gray-600 hover:bg-gray-100{% else %}border-green-600 text-green-700 hover:bg-green-50{% endif %} transition">
-                                    {% if task.status == 'completed' %}Làm lại{% else %}Xong{% endif %}
-                                </button>
-                            </form>
-                            <form method="POST" action="{% url 'delete_task' task.id %}" onsubmit="return confirm('Bạn có chắc muốn xóa?')">
-                                {% csrf_token %}
-                                <button type="submit" class="px-3 py-2 text-xs font-semibold rounded-lg text-red-600 hover:bg-red-50 transition border border-red-200 sm:border-transparent" aria-label="Xóa {{ task.title }}">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                {% endfor %}
+        <div class="card p-4 sm:p-5">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500">Rủi ro cao</span>
+                <span class="grid h-8 w-8 place-items-center rounded-lg bg-rose-50 text-rose-600"><i class="fa-solid fa-fire text-sm"></i></span>
             </div>
-        {% else %}
-            <div class="bg-white p-8 sm:p-12 text-center rounded-2xl border border-dashed border-gray-300">
-                <i class="fa-regular fa-calendar-check text-4xl text-gray-400 mb-2"></i>
-                <p class="text-sm text-gray-500 font-medium">Chưa có bài tập nào. Hãy nhập ở form bên trên!</p>
+            <p class="mt-2 text-3xl font-extrabold {% if stats.high_risk %}text-rose-600{% else %}text-slate-900{% endif %}">{{ stats.high_risk }}</p>
+            <p class="text-xs text-slate-400">có thể trễ hạn</p>
+        </div>
+        <div class="card p-4 sm:p-5">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500">Đã hoàn thành</span>
+                <span class="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-600"><i class="fa-solid fa-circle-check text-sm"></i></span>
             </div>
-        {% endif %}
+            <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ stats.completed }}</p>
+            <p class="text-xs text-slate-400">nhiệm vụ</p>
+        </div>
+        <div class="card p-4 sm:p-5">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500">Tập trung 7 ngày</span>
+                <span class="grid h-8 w-8 place-items-center rounded-lg bg-amber-50 text-amber-600"><i class="fa-solid fa-stopwatch text-sm"></i></span>
+            </div>
+            <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ stats.focus_minutes }}<span class="text-base font-bold text-slate-400"> phút</span></p>
+            <p class="text-xs text-slate-400">Pomodoro hoàn thành</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <!-- Danh sách nhiệm vụ -->
+        <section class="lg:col-span-2 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 class="section-title"><i class="fa-solid fa-list-check text-brand-500"></i>Nhiệm vụ & deadline</h2>
+                <div class="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
+                    <a href="?status=open" class="rounded-lg px-3 py-1.5 {% if status_filter == 'open' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">Đang mở</a>
+                    <a href="?status=completed" class="rounded-lg px-3 py-1.5 {% if status_filter == 'completed' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">Đã xong</a>
+                    <a href="?status=all" class="rounded-lg px-3 py-1.5 {% if status_filter == 'all' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">Tất cả</a>
+                </div>
+            </div>
+
+            {% if task_rows %}
+                <div class="space-y-3">
+                    {% for row in task_rows %}
+                        {% with task=row.task risk=row.risk %}
+                        <article class="card group relative overflow-hidden p-4 sm:p-5 transition hover:border-slate-300">
+                            <span class="absolute inset-y-0 left-0 w-1
+                                {% if task.status == 'completed' %}bg-emerald-400{% elif risk.level == 'high' %}bg-rose-500{% elif risk.level == 'medium' %}bg-amber-400{% else %}bg-brand-300{% endif %}"></span>
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <form method="POST" action="{% url 'toggle_task_status' task.id %}" class="shrink-0">
+                                    {% csrf_token %}
+                                    <button type="submit" title="{% if task.status == 'completed' %}Làm lại{% else %}Đánh dấu xong{% endif %}"
+                                        class="grid h-7 w-7 place-items-center rounded-full border-2 transition
+                                        {% if task.status == 'completed' %}border-emerald-500 bg-emerald-500 text-white{% else %}border-slate-300 text-transparent hover:border-emerald-500 hover:text-emerald-500{% endif %}">
+                                        <i class="fa-solid fa-check text-xs"></i>
+                                        <span class="sr-only">{% if task.status == 'completed' %}Làm lại{% else %}Xong{% endif %}</span>
+                                    </button>
+                                </form>
+
+                                <div class="min-w-0 flex-1 space-y-1.5">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <h3 class="text-[15px] font-semibold {% if task.status == 'completed' %}line-through text-slate-400{% else %}text-slate-900{% endif %}">{{ task.title }}</h3>
+                                        {% if task.course %}
+                                            <span class="badge bg-slate-100 text-slate-600">{{ task.course.code }} · {{ task.course.name }}</span>
+                                        {% elif task.subject_name %}
+                                            <span class="badge bg-slate-100 text-slate-600">{{ task.subject_name }}</span>
+                                        {% endif %}
+                                        {% if task.priority == 1 %}
+                                            <span class="badge bg-rose-50 text-rose-600"><i class="fa-solid fa-angles-up text-[9px]"></i>Ưu tiên cao</span>
+                                        {% elif task.priority == 2 %}
+                                            <span class="badge bg-amber-50 text-amber-700">Trung bình</span>
+                                        {% else %}
+                                            <span class="badge bg-sky-50 text-sky-700">Thấp</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                                        <span><i class="fa-regular fa-clock mr-1 {% if risk.hours_left < 24 and task.status != 'completed' %}text-rose-500{% endif %}"></i>{{ task.deadline|date:"H:i · d/m/Y" }}{% if task.status != 'completed' %} <span class="text-slate-400">({% if risk.hours_left > 0 %}còn {{ task.deadline|countdown }}{% else %}quá hạn{% endif %})</span>{% endif %}</span>
+                                        <span><i class="fa-solid fa-hourglass-half mr-1"></i>{{ task.estimated_minutes }} phút{% if task.status != 'completed' and risk.remaining_minutes != task.estimated_minutes %} · còn {{ risk.remaining_minutes }}{% endif %}</span>
+                                        {% if task.material_url %}
+                                            <a href="{{ task.material_url }}" target="_blank" rel="noopener" class="font-medium text-brand-600 hover:underline"><i class="fa-solid fa-link mr-1"></i>Tài liệu</a>
+                                        {% endif %}
+                                        {% if task.material_file %}
+                                            <a href="{% url 'download_study_material' task.id %}" class="font-medium text-brand-600 hover:underline"><i class="fa-solid fa-paperclip mr-1"></i>Tải tài liệu đính kèm</a>
+                                        {% endif %}
+                                    </div>
+                                    {% if task.status != 'completed' and risk.level != 'low' and risk.reasons %}
+                                        <p class="text-xs {% if risk.level == 'high' %}text-rose-600{% else %}text-amber-700{% endif %}"><i class="fa-solid fa-triangle-exclamation mr-1"></i>{{ risk.reasons.0 }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-3 sm:border-0 sm:pt-0">
+                                    {% if task.status != 'completed' %}
+                                        <div class="text-right" title="Điểm rủi ro trễ hạn">
+                                            <div class="flex items-center gap-2">
+                                                <div class="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
+                                                    <div class="h-full rounded-full {% if risk.level == 'high' %}bg-rose-500{% elif risk.level == 'medium' %}bg-amber-400{% else %}bg-emerald-400{% endif %}" style="width: {{ risk.score }}%"></div>
+                                                </div>
+                                                <span class="text-sm font-bold {% if risk.level == 'high' %}text-rose-600{% elif risk.level == 'medium' %}text-amber-600{% else %}text-emerald-600{% endif %}">{{ risk.score }}</span>
+                                            </div>
+                                            <p class="text-[10px] font-medium text-slate-400">{{ risk.label }}</p>
+                                        </div>
+                                    {% endif %}
+                                    <div class="flex items-center gap-1">
+                                        <a href="{% url 'edit_task' task.id %}" class="btn-ghost btn-sm" title="Sửa"><i class="fa-solid fa-pen"></i><span class="sm:hidden">Sửa</span></a>
+                                        <form method="POST" action="{% url 'delete_task' task.id %}" onsubmit="return confirm('Bạn có chắc muốn xóa?')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-danger btn-sm" aria-label="Xóa {{ task.title }}"><i class="fa-solid fa-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="card flex flex-col items-center px-6 py-14 text-center">
+                    <span class="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-2xl text-brand-500"><i class="fa-regular fa-calendar-check"></i></span>
+                    <p class="mt-4 font-semibold text-slate-800">{% if status_filter == 'completed' %}Chưa có nhiệm vụ nào hoàn thành{% else %}Chưa có bài tập nào{% endif %}</p>
+                    <p class="mt-1 text-sm text-slate-500">Thêm deadline đầu tiên ở biểu mẫu bên cạnh để AI bắt đầu gợi ý lịch.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <!-- Cột phải -->
+        <aside class="space-y-6">
+            <!-- Lịch hôm nay -->
+            <div class="card card-pad">
+                <div class="mb-4 flex items-center justify-between">
+                    <h2 class="section-title"><i class="fa-regular fa-calendar text-brand-500"></i>Hôm nay</h2>
+                    <a href="{% url 'calendar_view' %}" class="text-xs font-semibold text-brand-600 hover:underline">Xem lịch →</a>
+                </div>
+                {% if today_blocks %}
+                    <ol class="relative space-y-3 border-l-2 border-slate-100 pl-4">
+                        {% for block in today_blocks %}
+                            <li class="relative">
+                                <span class="absolute -left-[23px] top-1.5 h-3 w-3 rounded-full ring-4 ring-white {% if block.is_fixed %}bg-slate-400{% elif block.status == 'suggested' %}bg-violet-500{% else %}bg-brand-600{% endif %}"></span>
+                                <p class="text-xs font-semibold text-slate-400">{{ block.start_time|time:"H:i" }} – {{ block.end_time|time:"H:i" }}</p>
+                                <p class="text-sm font-medium text-slate-800">{{ block.title }}</p>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% else %}
+                    <p class="rounded-xl bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">Chưa có phiên học nào hôm nay.<br>Bấm <b>Lập lịch tuần</b> để AI xếp lịch.</p>
+                {% endif %}
+            </div>
+
+            <!-- Form thêm nhiệm vụ -->
+            <div id="new-task" class="card card-pad scroll-mt-24">
+                <h2 class="section-title mb-4"><i class="fa-solid fa-circle-plus text-brand-500"></i>Thêm deadline / bài tập</h2>
+                <form method="POST" enctype="multipart/form-data" class="space-y-3.5">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <p class="mt-1 text-xs text-rose-600">{{ field.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn-primary w-full">Lưu bài tập</button>
+                </form>
+            </div>
+        </aside>
     </div>
 </div>
 {% endblock %}

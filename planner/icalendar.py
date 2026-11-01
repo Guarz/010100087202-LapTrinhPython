@@ -113,3 +113,102 @@ def build_user_calendar(user):
         for physical_line in _fold_line(line)
     ]
     return '\r\n'.join(folded_lines) + '\r\n'
+
+
+# ============================================================
+# NHẬP LỊCH .ICS (Google Calendar, Outlook, lịch trường...)
+# Mỗi VEVENT có DTSTART/DTEND thành một ScheduleBlock cố định
+# (lịch bận) để thuật toán xếp lịch tránh các khung giờ này.
+# ============================================================
+
+def _unfold(text):
+    return text.replace('\r\n', '\n').replace('\n ', '').replace('\n\t', '').split('\n')
+
+
+def _unescape_text(value):
+    return (
+        value.replace('\\n', '\n').replace('\\N', '\n')
+        .replace('\\,', ',').replace('\\;', ';').replace('\\\\', '\\')
+    )
+
+
+def _parse_ics_datetime(value, params):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    value = value.strip()
+    if 'VALUE=DATE' in params or len(value) == 8:
+        parsed = datetime.strptime(value[:8], '%Y%m%d')
+        return timezone.make_aware(parsed), True
+    if value.endswith('Z'):
+        parsed = datetime.strptime(value, '%Y%m%dT%H%M%SZ')
+        return parsed.replace(tzinfo=datetime_timezone.utc), False
+    parsed = datetime.strptime(value[:15], '%Y%m%dT%H%M%S')
+    tzid = next((p.split('=', 1)[1] for p in params if p.startswith('TZID=')), None)
+    if tzid:
+        try:
+            return parsed.replace(tzinfo=ZoneInfo(tzid)), False
+        except Exception:  # noqa: BLE001 - TZID lạ thì dùng múi giờ hệ thống
+            pass
+    return timezone.make_aware(parsed), False
+
+
+def parse_ics_events(text):
+    """Trả về danh sách dict {uid, title, start, end} từ nội dung .ics."""
+    events = []
+    current = None
+    for line in _unfold(text):
+        if line == 'BEGIN:VEVENT':
+            current = {}
+            continue
+        if line == 'END:VEVENT':
+            if current and current.get('start'):
+                start = current['start']
+                end = current.get('end') or (
+                    start + timedelta(days=1) if current.get('all_day') else start + timedelta(hours=1)
+                )
+                if end > start:
+                    events.append({
+                        'uid': current.get('uid', ''),
+                        'title': current.get('title') or 'Sự kiện nhập',
+                        'start': start,
+                        'end': end,
+                    })
+            current = None
+            continue
+        if current is None or ':' not in line:
+            continue
+        key_part, value = line.split(':', 1)
+        name, *params = key_part.split(';')
+        name = name.upper()
+        try:
+            if name == 'DTSTART':
+                current['start'], current['all_day'] = _parse_ics_datetime(value, params)
+            elif name == 'DTEND':
+                current['end'], _ = _parse_ics_datetime(value, params)
+        except ValueError:
+            continue
+        if name == 'SUMMARY':
+            current['title'] = _unescape_text(value)[:180]
+        elif name == 'UID':
+            current['uid'] = value
+    return events
+
+
+def import_ics_for_user(user, text):
+    """Nhập sự kiện .ics thành khối lịch bận cố định. Bỏ qua sự kiện đã qua và bản trùng."""
+    now = timezone.now()
+    created = 0
+    for event in parse_ics_events(text):
+        if event['end'] <= now:
+            continue
+        title = f"Lịch nhập: {event['title']}"
+        _, was_created = ScheduleBlock.objects.get_or_create(
+            user=user,
+            title=title,
+            start_time=event['start'],
+            end_time=event['end'],
+            defaults={'is_fixed': True, 'status': 'confirmed'},
+        )
+        created += int(was_created)
+    return created

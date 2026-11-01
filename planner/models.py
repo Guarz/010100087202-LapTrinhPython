@@ -51,6 +51,13 @@ class UserProfile(models.Model):
         help_text="Giờ ngủ cố định"
     )
 
+    # Token bí mật cho link đăng ký lịch .ics (Google/Apple/Outlook Calendar)
+    calendar_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+
     def __str__(self):
         return f"Hồ sơ của {self.user.username}"
 

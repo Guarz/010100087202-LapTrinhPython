@@ -1,60 +1,79 @@
 <!-- templates/planner/calendar.html -->
 {% extends 'base.html' %}
 
-{% block title %}Lịch Biểu Học Tập - AI Planner{% endblock %}
+{% block title %}Lịch học - StudyPlanner{% endblock %}
 
 {% block content %}
-<div class="space-y-4 sm:space-y-6">
-    <!-- Header + Nút lập lịch -->
-    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+<div class="space-y-6">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <h1 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
-                <span>Thời Khóa Biểu & Kế Hoạch</span>
-                <span class="text-xs bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full font-semibold">Tự động</span>
-            </h1>
-            <p class="text-xs sm:text-sm text-gray-500 mt-0.5">Kéo thả hoặc chạm vào ô sự kiện để xem chi tiết</p>
+            <h1 class="page-title">Lịch & kế hoạch tuần</h1>
+            <p class="page-sub">Kéo thả hoặc kéo dãn phiên học để chỉnh sửa. Bấm vào sự kiện để xem chi tiết.</p>
         </div>
+        <div class="flex flex-wrap gap-2">
+            <form method="POST" action="{% url 'trigger_auto_schedule' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i>Tự động lập lịch tuần</button>
+            </form>
+            <a href="{% url 'create_schedule_block' %}" class="btn-secondary"><i class="fa-solid fa-plus"></i>Tạo sự kiện</a>
+            <button type="button" id="sync-toggle" class="btn-secondary"><i class="fa-solid fa-arrows-rotate"></i>Đồng bộ .ics</button>
+        </div>
+    </div>
 
-        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            <!-- Chú thích bằng FontAwesome -->
-            <div class="hidden lg:flex items-center gap-4 text-xs font-medium text-gray-600 bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
-                <span class="flex items-center gap-1.5">
-                    <i class="fa-solid fa-clock text-red-500"></i> Hạn chót
-                </span>
-                <span class="flex items-center gap-1.5">
-                    <i class="fa-solid fa-book-open text-blue-500"></i> Tự học
-                </span>
-                <span class="flex items-center gap-1.5">
-                    <i class="fa-solid fa-lock text-slate-500"></i> Cố định
-                </span>
+    <!-- Bảng đồng bộ .ics -->
+    <div id="sync-panel" class="hidden grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="card card-pad md:col-span-2">
+            <h2 class="section-title"><i class="fa-solid fa-link text-brand-500"></i>Đăng ký lịch tự động cập nhật</h2>
+            <p class="mt-1 text-sm text-slate-500">Dán link này vào Google Calendar (<i>Thêm lịch → Từ URL</i>), Apple Calendar hoặc Outlook. Deadline và phiên học sẽ tự đồng bộ.</p>
+            <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                <input id="feed-url" class="field font-mono text-xs" readonly value="{{ feed_url }}">
+                <button type="button" id="copy-feed" class="btn-secondary shrink-0"><i class="fa-regular fa-copy"></i><span>Sao chép</span></button>
             </div>
-
-            <!-- Nút tự động lập lịch -->
-            <a href="{% url 'trigger_auto_schedule' %}" class="w-full sm:w-auto text-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl shadow-md transition duration-200 flex items-center gap-2 text-sm">
-                <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
-                <span>Tự động lập lịch tuần</span>
-            </a>
-            <a href="{% url 'create_schedule_block' %}" class="w-full sm:w-auto text-center justify-center bg-white hover:bg-blue-50 text-blue-700 font-semibold px-4 py-2.5 rounded-xl border border-blue-200 transition flex items-center gap-2 text-sm">
-                <i class="fa-solid fa-plus"></i>
-                <span>Tạo sự kiện</span>
-            </a>
-            <a href="{% url 'export_calendar_ics' %}" class="w-full sm:w-auto text-center justify-center bg-white hover:bg-gray-50 text-gray-700 font-semibold px-4 py-2.5 rounded-xl border border-gray-200 transition flex items-center gap-2 text-sm">
-                <i class="fa-solid fa-download"></i>
-                <span>Xuất lịch .ics</span>
-            </a>
+            <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                <a href="{{ webcal_url }}" class="btn-ghost btn-sm"><i class="fa-brands fa-apple"></i>Mở trong ứng dụng lịch</a>
+                <a href="{% url 'export_calendar_ics' %}" class="btn-ghost btn-sm"><i class="fa-solid fa-download"></i>Xuất lịch .ics</a>
+                <form method="POST" action="{% url 'reset_calendar_token' %}" onsubmit="return confirm('Link cũ sẽ ngừng hoạt động. Tiếp tục?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-danger btn-sm"><i class="fa-solid fa-rotate"></i>Tạo link mới</button>
+                </form>
+            </div>
+        </div>
+        <div class="card card-pad">
+            <h2 class="section-title"><i class="fa-solid fa-file-import text-brand-500"></i>Nhập lịch .ics</h2>
+            <p class="mt-1 text-sm text-slate-500">Nhập thời khóa biểu / lịch thi để AI tránh các khung giờ bận.</p>
+            <form method="POST" action="{% url 'import_calendar_ics' %}" enctype="multipart/form-data" class="mt-3 space-y-3">
+                {% csrf_token %}
+                {{ import_form.ics_file }}
+                <button type="submit" class="btn-primary w-full"><i class="fa-solid fa-upload"></i>Nhập lịch</button>
+            </form>
         </div>
     </div>
 
     <div hidden>{% csrf_token %}</div>
 
-    <!-- Khung Calendar -->
-    <div class="bg-white p-3 sm:p-6 rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div id="calendar" class="min-h-[550px] sm:min-h-[700px]"></div>
+    <div class="card p-3 sm:p-5">
+        <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 px-1 text-xs font-medium text-slate-500">
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-rose-500"></span>Deadline ưu tiên cao</span>
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>Deadline khác</span>
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-violet-500"></span>AI gợi ý</span>
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-brand-600"></span>Đã xác nhận</span>
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-slate-500"></span>Lịch cố định</span>
+        </div>
+        <div id="calendar" class="min-h-[560px] sm:min-h-[720px]"></div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 <script>
+    document.getElementById('sync-toggle').addEventListener('click', () => {
+        document.getElementById('sync-panel').classList.toggle('hidden');
+    });
+    document.getElementById('copy-feed').addEventListener('click', async (e) => {
+        const input = document.getElementById('feed-url');
+        try { await navigator.clipboard.writeText(input.value); } catch (err) { input.select(); document.execCommand('copy'); }
+        e.currentTarget.querySelector('span').textContent = 'Đã chép!';
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         const isMobile = window.innerWidth < 768;
         const calendarEl = document.getElementById('calendar');
@@ -64,9 +83,10 @@
             locale: 'vi',
             firstDay: 1,
             editable: true,
+            nowIndicator: true,
             eventResizableFromStart: true,
             headerToolbar: isMobile ? {
-                left: 'prev,next today',
+                left: 'prev,next',
                 center: 'title',
                 right: 'timeGridDay,dayGridMonth'
             } : {
@@ -78,21 +98,17 @@
             slotMinTime: '06:00:00',
             slotMaxTime: '24:00:00',
             allDaySlot: false,
-            events: '/api/calendar-events/',
+            events: '{% url "calendar_events_api" %}',
 
-            // Chèn trực tiếp icon FontAwesome vào thẻ sự kiện
             eventContent: function(arg) {
                 const iconClass = arg.event.extendedProps.icon || 'fa-solid fa-calendar';
                 const container = document.createElement('div');
-                container.className = 'flex items-center gap-1.5 p-0.5 truncate text-white leading-tight';
-
+                container.className = 'flex items-center gap-1.5 px-1 py-0.5 truncate text-white leading-tight';
                 const icon = document.createElement('i');
-                icon.className = `${iconClass} text-[11px] opacity-90`;
-
+                icon.className = `${iconClass} text-[10px] opacity-90`;
                 const title = document.createElement('span');
-                title.className = 'truncate font-medium text-xs';
+                title.className = 'truncate font-semibold text-[11px]';
                 title.innerText = arg.event.title;
-
                 container.appendChild(icon);
                 container.appendChild(title);
                 return { domNodes: [container] };
@@ -101,7 +117,6 @@
             eventAllow: function(dropInfo, draggedEvent) {
                 return draggedEvent.extendedProps.type === 'block' && !draggedEvent.extendedProps.is_fixed;
             },
-
             eventDrop: function(info) { saveEventChange(info.event); },
             eventResize: function(info) { saveEventChange(info.event); },
 
@@ -128,7 +143,7 @@
         });
 
         function saveEventChange(event) {
-            fetch('/api/update-block-time/', {
+            fetch('{% url "update_block_time_api" %}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -144,8 +159,8 @@
             .then(data => {
                 if (data.status !== 'success') {
                     alert(data.message || 'Không thể cập nhật sự kiện.');
-                    calendar.refetchEvents();
                 }
+                calendar.refetchEvents();
             })
             .catch(() => {
                 alert('Không thể kết nối để cập nhật sự kiện.');
@@ -156,12 +171,18 @@
 </script>
 
 <style>
-    .fc { font-family: inherit; font-size: 0.85rem; }
-    .fc-theme-standard td, .fc-theme-standard th { border-color: #f1f5f9; }
-    .fc-col-header-cell { background-color: #f8fafc; padding: 6px 0; }
-    .fc-toolbar { flex-wrap: wrap; gap: 8px; }
-    .fc-toolbar-title { font-size: 1.1rem !important; }
-    .fc-button { padding: 4px 10px !important; font-size: 0.8rem !important; }
-    .fc-event { border-radius: 6px; padding: 2px 4px; border: none !important; }
+    .fc { font-family: inherit; font-size: .82rem; --fc-border-color: #eef2f7; --fc-today-bg-color: #eef2ff; --fc-now-indicator-color: #f43f5e; }
+    .fc .fc-toolbar { flex-wrap: wrap; gap: 8px; }
+    .fc .fc-toolbar-title { font-size: 1.05rem; font-weight: 800; color: #0f172a; }
+    .fc .fc-button { background: #fff; border: 1px solid #e2e8f0; color: #334155; font-weight: 600; font-size: .78rem; padding: 6px 12px; border-radius: 10px; box-shadow: none; text-transform: none; }
+    .fc .fc-button:hover { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+    .fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    .fc .fc-button-group > .fc-button { border-radius: 0; }
+    .fc .fc-button-group > .fc-button:first-child { border-radius: 10px 0 0 10px; }
+    .fc .fc-button-group > .fc-button:last-child { border-radius: 0 10px 10px 0; }
+    .fc .fc-col-header-cell { background: #f8fafc; padding: 8px 0; font-weight: 700; color: #475569; }
+    .fc .fc-timegrid-slot-label { color: #94a3b8; font-size: .72rem; }
+    .fc .fc-event { border-radius: 8px; border: none !important; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+    .fc .fc-scrollgrid { border-radius: 14px; overflow: hidden; }
 </style>
 {% endblock %}

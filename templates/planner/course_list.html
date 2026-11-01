@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Môn học - StudyPlanner{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="page-title">Môn học</h1>
+        <p class="page-sub">Quản lý các khóa học để gắn nhiệm vụ và theo dõi khối lượng theo môn.</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <aside class="card card-pad h-fit">
+            <h2 class="section-title mb-4"><i class="fa-solid fa-circle-plus text-brand-500"></i>Thêm môn học</h2>
+            <form method="POST" class="space-y-3.5">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<p class="mt-1 text-xs text-rose-600">{{ field.errors.0 }}</p>{% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn-primary w-full">Lưu môn học</button>
+            </form>
+        </aside>
+
+        <section class="lg:col-span-2">
+            {% if courses %}
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {% for course in courses %}
+                        <div class="card p-5">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <span class="badge bg-brand-50 text-brand-700">{{ course.code }}</span>
+                                    <h3 class="mt-2 font-bold text-slate-900">{{ course.name }}</h3>
+                                    {% if course.description %}<p class="mt-1 text-sm text-slate-500">{{ course.description }}</p>{% endif %}
+                                </div>
+                                <form method="POST" action="{% url 'delete_course' course.id %}" onsubmit="return confirm('Xóa môn này? Nhiệm vụ vẫn được giữ lại.')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-danger btn-sm" aria-label="Xóa {{ course.code }}"><i class="fa-solid fa-trash"></i></button>
+                                </form>
+                            </div>
+                            <p class="mt-4 text-xs font-medium text-slate-500"><i class="fa-solid fa-list-check mr-1"></i>{{ course.task_count }} nhiệm vụ</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="card flex flex-col items-center px-6 py-14 text-center">
+                    <span class="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-2xl text-brand-500"><i class="fa-solid fa-book"></i></span>
+                    <p class="mt-4 font-semibold text-slate-800">Chưa có môn học</p>
+                    <p class="mt-1 text-sm text-slate-500">Thêm môn đầu tiên để phân loại nhiệm vụ.</p>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

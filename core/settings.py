@@ -21,10 +21,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-)-e7pb)b7=p(a==305qrl40iliwpb-$9(t-)l)auju3tk9xz-a')
-DEBUG = True
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / '.env')
+except ImportError:
+    pass
+
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-only-change-me')
 # SECURITY WARNING: don't run with debug turned on in production!
-ALLOWED_HOSTS = ['*']
+DEBUG = os.getenv('DEBUG', 'true').lower() == 'true'
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv('ALLOWED_HOSTS', '*').split(',')
+    if host.strip()
+]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip()
+]
+if os.getenv('RENDER_EXTERNAL_HOSTNAME'):
+    CSRF_TRUSTED_ORIGINS.append(f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}")
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 
 # Application definition
@@ -62,6 +83,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'planner.context_processors.upcoming_deadlines',
             ],
         },
     },
@@ -72,12 +94,14 @@ WSGI_APPLICATION = 'core.wsgi.application'
 import dj_database_url
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
-SUPABASE_DB_URL = 'postgresql://postgres.tyrzaaqnyxapcmtwrmoi:dotranquanganh123@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres'
+# DATABASE_URL trỏ tới PostgreSQL (Supabase/Render). Không có biến này thì
+# dùng SQLite cục bộ để chạy thử và kiểm thử.
+DATABASE_URL = os.getenv('DATABASE_URL', f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 DATABASES = {
-    'default': dj_database_url.config(
-        default=SUPABASE_DB_URL,
+    'default': dj_database_url.parse(
+        DATABASE_URL,
         conn_max_age=600,
-        ssl_require=True
+        ssl_require=DATABASE_URL.startswith('postgres'),
     )
 }
 
@@ -104,9 +128,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'vi'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
 
 USE_I18N = True
 
@@ -155,3 +179,28 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+# ============================================================
+# BACKGROUND JOBS - CELERY + REDIS
+# Celery Beat chạy nhắc deadline định kỳ. Không có REDIS_URL thì
+# vẫn dùng được lệnh `python manage.py send_deadline_reminders`
+# (cron của Render/Railway) hoặc nhắc trong ứng dụng.
+# ============================================================
+
+REDIS_URL = os.getenv('REDIS_URL', '')
+CELERY_BROKER_URL = REDIS_URL or 'memory://'
+CELERY_RESULT_BACKEND = REDIS_URL or None
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_ALWAYS_EAGER = not REDIS_URL
+CELERY_BEAT_SCHEDULE = {
+    'deadline-reminders-every-15-minutes': {
+        'task': 'planner.tasks.send_deadline_reminders_task',
+        'schedule': 15 * 60,
+    },
+}
+
+# Nhắc trong ứng dụng: deadline nằm trong số giờ này sẽ hiện banner + thông báo trình duyệt.
+REMINDER_HOURS_BEFORE = int(os.getenv('REMINDER_HOURS_BEFORE', '24'))
+
+# AI: dùng OPENAI_API_KEY; không có thì dùng phân tích dự phòng.
+OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')

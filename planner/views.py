@@ -16,6 +16,8 @@
 
 import json
 import os
+import uuid
+from datetime import timedelta
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.files.storage import default_storage
@@ -31,15 +33,20 @@ from django.views.decorators.http import (
     require_POST,
 )
 
-from django.db.models import Sum
+from django.db.models import Count, Sum
+from django.urls import reverse
 from django.utils import timezone
 
+from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.utils.dateparse import parse_datetime
 
 from .forms import (
+    CourseForm,
+    IcsImportForm,
+    StudyHoursForm,
     TaskForm,
     ScheduleBlockForm,
     RecurringScheduleForm,
@@ -47,6 +54,7 @@ from .forms import (
 )
 
 from .models import (
+    Course,
     Task,
     ScheduleBlock,
     RecurringSchedule,
@@ -54,9 +62,10 @@ from .models import (
     UserProfile,
 )
 
-from .scheduler import auto_generate_weekly_schedule
+from .scheduler import generate_weekly_plan
 from .ai_assistant import analyze_schedule_with_ai
-from .icalendar import build_user_calendar
+from .icalendar import build_user_calendar, import_ics_for_user
+from .risk import assess_task, assess_user_tasks
 
 # C2.3 - Service lưu phiên Pomodoro.
 from .pomodoro_services import (
@@ -87,13 +96,49 @@ def task_list(request):
             task = form.save(commit=False)
             task.user = request.user
             task.save()
+            messages.success(request, f'Đã thêm nhiệm vụ "{task.title}".')
             return redirect('task_list')
     else:
         form = TaskForm(user=request.user)
 
+    now = timezone.now()
+    task_rows = [
+        {'task': task, 'risk': assess_task(task, now)}
+        for task in tasks
+    ]
+    open_rows = [row for row in task_rows if row['task'].status != 'completed']
+    week_logs = PomodoroLog.objects.filter(
+        user=request.user,
+        start_time__gte=now - timedelta(days=7),
+        completed=True,
+    ).exclude(status='deferred')
+    stats = {
+        'open': len(open_rows),
+        'completed': len(task_rows) - len(open_rows),
+        'high_risk': sum(1 for row in open_rows if row['risk'].level == 'high'),
+        'focus_minutes': sum(
+            (log.actual_seconds or log.duration_minutes * 60) for log in week_logs
+        ) // 60,
+    }
+    status_filter = request.GET.get('status', 'open')
+    if status_filter == 'open':
+        visible_rows = open_rows
+    elif status_filter == 'completed':
+        visible_rows = [row for row in task_rows if row['task'].status == 'completed']
+    else:
+        status_filter = 'all'
+        visible_rows = task_rows
+
     context = {
         'tasks': tasks,
+        'task_rows': visible_rows,
+        'status_filter': status_filter,
+        'stats': stats,
         'form': form,
+        'today_blocks': ScheduleBlock.objects.filter(
+            user=request.user,
+            start_time__date=timezone.localdate(),
+        ).order_by('start_time')[:6],
     }
 
     return render(
@@ -211,11 +256,59 @@ def download_study_material(request, task_id):
 
 @login_required
 def calendar_view(request):
-
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    feed_url = request.build_absolute_uri(
+        reverse('calendar_feed', args=[profile.calendar_token])
+    )
     return render(
         request,
-        'planner/calendar.html'
+        'planner/calendar.html',
+        {
+            'feed_url': feed_url,
+            'webcal_url': feed_url.replace('https://', 'webcal://').replace('http://', 'webcal://'),
+            'import_form': IcsImportForm(),
+        },
     )
+
+
+@require_GET
+def calendar_feed(request, token):
+    """Link đăng ký lịch (subscribe) không cần đăng nhập, bảo vệ bằng token bí mật."""
+    profile = get_object_or_404(UserProfile, calendar_token=token)
+    response = HttpResponse(
+        build_user_calendar(profile.user),
+        content_type='text/calendar; charset=utf-8',
+    )
+    response['Content-Disposition'] = 'inline; filename="ai-study-planner.ics"'
+    response['Cache-Control'] = 'private, max-age=300'
+    return response
+
+
+@login_required
+@require_POST
+def import_calendar_ics(request):
+    form = IcsImportForm(request.POST, request.FILES)
+    if not form.is_valid():
+        messages.error(request, form.errors.get('ics_file', ['Tệp không hợp lệ.'])[0])
+        return redirect('calendar_view')
+    raw = form.cleaned_data['ics_file'].read()
+    try:
+        text = raw.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        text = raw.decode('latin-1')
+    created = import_ics_for_user(request.user, text)
+    messages.success(request, f'Đã nhập {created} sự kiện từ tệp .ics vào lịch bận.')
+    return redirect('calendar_view')
+
+
+@login_required
+@require_POST
+def reset_calendar_token(request):
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile.calendar_token = uuid.uuid4()
+    profile.save(update_fields=['calendar_token'])
+    messages.success(request, 'Đã tạo link đăng ký lịch mới; link cũ không còn hoạt động.')
+    return redirect('calendar_view')
 
 
 @login_required
@@ -255,9 +348,9 @@ def calendar_events_api(request):
             'allDay': False,
 
             'backgroundColor': (
-                '#ef4444'
-                if task.priority == 1
-                else '#f59e0b'
+                '#10b981'
+                if task.status == 'completed'
+                else ('#ef4444' if task.priority == 1 else '#f59e0b')
             ),
 
             'borderColor': 'transparent',
@@ -296,7 +389,7 @@ def calendar_events_api(request):
             'backgroundColor': (
                 '#64748b'
                 if block.is_fixed
-                else '#3b82f6'
+                else ('#8b5cf6' if block.status == 'suggested' else '#4f46e5')
             ),
 
             'borderColor': 'transparent',
@@ -388,19 +481,8 @@ def delete_schedule_block(request, block_id):
 
 @login_required
 def recurring_schedule_list(request):
-
-    user = (
-        request.user
-        if request.user.is_authenticated
-        else None
-    )
-
-    if not user:
-
-        from django.contrib.auth.models import User
-
-        user = User.objects.first()
-
+    user = request.user
+    profile, _ = UserProfile.objects.get_or_create(user=user)
     schedules = RecurringSchedule.objects.filter(
         user=user
     ).order_by(
@@ -408,43 +490,45 @@ def recurring_schedule_list(request):
         'start_time'
     )
 
+    form = RecurringScheduleForm()
+    hours_form = StudyHoursForm(instance=profile)
+
     if request.method == 'POST':
-
-        form = RecurringScheduleForm(request.POST)
-
-        if form.is_valid():
-
-            rec = form.save(commit=False)
-
-            rec.user = user
-
-            rec.save()
-
-            return redirect('recurring_list')
-
-    else:
-
-        form = RecurringScheduleForm()
+        if request.POST.get('form') == 'hours':
+            hours_form = StudyHoursForm(request.POST, instance=profile)
+            if hours_form.is_valid():
+                hours_form.save()
+                messages.success(request, 'Đã lưu khung giờ ngủ / học.')
+                return redirect('recurring_list')
+        else:
+            form = RecurringScheduleForm(request.POST)
+            if form.is_valid():
+                rec = form.save(commit=False)
+                rec.user = user
+                rec.save()
+                messages.success(request, f'Đã thêm lịch bận "{rec.title}".')
+                return redirect('recurring_list')
 
     return render(
         request,
         'planner/recurring_list.html',
         {
             'schedules': schedules,
-            'form': form
+            'form': form,
+            'hours_form': hours_form,
         }
     )
 
 
+@login_required
+@require_POST
 def delete_recurring(request, id):
-
     rec = get_object_or_404(
         RecurringSchedule,
-        id=id
+        id=id,
+        user=request.user,
     )
-
     rec.delete()
-
     return redirect(
         'recurring_list'
     )
@@ -452,30 +536,81 @@ def delete_recurring(request, id):
 
 # ============================================================
 # 04. AUTO SCHEDULE
-# GIỮ NGUYÊN LOGIC CŨ
 # ============================================================
 
+@login_required
+@require_POST
 def trigger_auto_schedule(request):
-
-    user = (
-        request.user
-        if request.user.is_authenticated
-        else None
-    )
-
-    if not user:
-
-        from django.contrib.auth.models import User
-
-        user = User.objects.first()
-
-    count = auto_generate_weekly_schedule(
-        user
-    )
-
+    result = generate_weekly_plan(request.user)
+    if result['created']:
+        messages.success(
+            request,
+            f"Đã sinh {result['created']} phiên học gợi ý cho 7 ngày tới. "
+            'Kéo thả để chỉnh sửa; phiên đã chỉnh sẽ được giữ lại.'
+        )
+    else:
+        messages.info(request, 'Không có nhiệm vụ nào cần xếp lịch.')
+    for title, minutes in result['unscheduled'].items():
+        messages.warning(
+            request,
+            f'"{title}" còn {minutes} phút chưa xếp được trước deadline — '
+            'hãy giảm lịch bận hoặc dời deadline.'
+        )
     return redirect(
         'calendar_view'
     )
+
+
+# ============================================================
+# 04b. COURSES
+# ============================================================
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def course_list(request):
+    form = CourseForm(request.POST or None, user=request.user)
+    if request.method == 'POST' and form.is_valid():
+        course = form.save(commit=False)
+        course.user = request.user
+        course.save()
+        messages.success(request, f'Đã thêm môn {course.code}.')
+        return redirect('course_list')
+    courses = (
+        Course.objects.filter(user=request.user)
+        .annotate(task_count=Count('tasks'))
+    )
+    return render(request, 'planner/course_list.html', {'courses': courses, 'form': form})
+
+
+@login_required
+@require_POST
+def delete_course(request, course_id):
+    course = get_object_or_404(Course, id=course_id, user=request.user)
+    course.delete()
+    messages.success(request, f'Đã xóa môn {course.code}.')
+    return redirect('course_list')
+
+
+# ============================================================
+# 04c. RISK API
+# ============================================================
+
+@login_required
+@require_GET
+def risk_api(request):
+    data = [
+        {
+            'task_id': task.id,
+            'title': task.title,
+            'deadline': task.deadline.isoformat(),
+            'score': risk.score,
+            'level': risk.level,
+            'remaining_minutes': risk.remaining_minutes,
+            'reasons': risk.reasons,
+        }
+        for task, risk in assess_user_tasks(request.user)
+    ]
+    return JsonResponse({'tasks': data})
 
 
 # ============================================================
@@ -890,39 +1025,15 @@ def pomodoro_heatmap_api(request):
 
 @login_required
 def ai_assistant_view(request):
-
-    user = (
-        request.user
-        if request.user.is_authenticated
-        else None
-    )
-
-    if not user:
-
-        from django.contrib.auth.models import User
-
-        user = User.objects.first()
-
-    insights = analyze_schedule_with_ai(
-        user
-    )
-
-    high_priority_tasks = Task.objects.filter(
-        user=user,
-        status__in=[
-            'todo',
-            'in_progress'
-        ],
-        priority=1
-    ).order_by(
-        'deadline'
-    )[:5]
-
+    insights = analyze_schedule_with_ai(request.user)
+    risks = assess_user_tasks(request.user)
     context = {
         'insights': insights,
-        'high_priority_tasks': high_priority_tasks,
+        'risk_rows': risks[:8],
+        'high_count': sum(1 for _, r in risks if r.level == 'high'),
+        'medium_count': sum(1 for _, r in risks if r.level == 'medium'),
+        'low_count': sum(1 for _, r in risks if r.level == 'low'),
     }
-
     return render(
         request,
         'planner/ai_assistant.html',

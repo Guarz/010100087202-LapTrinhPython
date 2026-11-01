@@ -1,6 +1,6 @@
 # planner/forms.py
 from django import forms
-from .models import Course, RecurringSchedule, ScheduleBlock, Task
+from .models import Course, RecurringSchedule, ScheduleBlock, Task, UserProfile
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
@@ -12,10 +12,11 @@ class TaskForm(forms.ModelForm):
             if user is not None
             else Course.objects.none()
         )
+        self.fields['course'].empty_label = '— Không gắn môn —'
 
     deadline = forms.DateTimeField(
         widget=forms.DateTimeInput(
-            attrs={'type': 'datetime-local', 'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}
+            attrs={'type': 'datetime-local', 'class': 'field'}
         ),
         label="Hạn chót (Deadline)"
     )
@@ -42,14 +43,14 @@ class TaskForm(forms.ModelForm):
             'material_file': 'Tải tài liệu lên (PDF, Word, PowerPoint, TXT; tối đa 10 MB)',
         }
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', 'placeholder': 'VD: Làm bài tập lớn...'}),
-            'course': forms.Select(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}),
-            'subject_name': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', 'placeholder': 'VD: Kiến trúc máy tính'}),
-            'estimated_minutes': forms.NumberInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', 'placeholder': 'VD: 90'}),
-            'priority': forms.Select(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}),
-            'material_url': forms.URLInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', 'placeholder': 'https://drive.google.com/...'}),
+            'title': forms.TextInput(attrs={'class': 'field', 'placeholder': 'VD: Làm bài tập lớn...'}),
+            'course': forms.Select(attrs={'class': 'field'}),
+            'subject_name': forms.TextInput(attrs={'class': 'field', 'placeholder': 'VD: Kiến trúc máy tính'}),
+            'estimated_minutes': forms.NumberInput(attrs={'class': 'field', 'placeholder': 'VD: 90'}),
+            'priority': forms.Select(attrs={'class': 'field'}),
+            'material_url': forms.URLInput(attrs={'class': 'field', 'placeholder': 'https://drive.google.com/...'}),
             'material_file': forms.ClearableFileInput(attrs={
-                'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+                'class': 'field',
                 'accept': '.pdf,.doc,.docx,.ppt,.pptx,.txt',
             }),
         }
@@ -67,7 +68,7 @@ class ScheduleBlockForm(forms.ModelForm):
         widget=forms.DateTimeInput(
             attrs={
                 'type': 'datetime-local',
-                'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+                'class': 'field',
             }
         ),
         label='Bắt đầu'
@@ -76,7 +77,7 @@ class ScheduleBlockForm(forms.ModelForm):
         widget=forms.DateTimeInput(
             attrs={
                 'type': 'datetime-local',
-                'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+                'class': 'field',
             }
         ),
         label='Kết thúc'
@@ -91,17 +92,18 @@ class ScheduleBlockForm(forms.ModelForm):
         }
         widgets = {
             'title': forms.TextInput(attrs={
-                'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+                'class': 'field',
                 'placeholder': 'VD: Ôn tập chương 1',
             }),
             'task': forms.Select(attrs={
-                'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+                'class': 'field',
             }),
         }
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['task'].required = False
+        self.fields['task'].empty_label = '— Không gắn nhiệm vụ —'
         self.fields['task'].queryset = (
             Task.objects.filter(user=user)
             if user is not None
@@ -129,19 +131,19 @@ class RecurringScheduleForm(forms.ModelForm):
             'category': 'Phân loại',
         }
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', 'placeholder': 'VD: Học Thể dục, Ca làm part-time...'}),
-            'day_of_week': forms.Select(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}),
-            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}),
-            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}),
+            'title': forms.TextInput(attrs={'class': 'field', 'placeholder': 'VD: Học Thể dục, Ca làm part-time...'}),
+            'day_of_week': forms.Select(attrs={'class': 'field'}),
+            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'field'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'field'}),
             'category': forms.Select(
                 choices=[('school', 'Lịch học trường'), ('part_time', 'Ca làm thêm'), ('personal', 'Việc cá nhân')],
-                attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'}
+                attrs={'class': 'field'}
             ),
         }
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(
         required=True,
-        widget=forms.EmailInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', 'placeholder': 'sinhvien@gmail.com'})
+        widget=forms.EmailInput(attrs={'class': 'field', 'placeholder': 'sinhvien@gmail.com'})
     )
 
     class Meta:
@@ -152,11 +154,83 @@ class RegisterForm(UserCreationForm):
             'email': 'Địa chỉ Email',
         }
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', 'placeholder': 'nhap_ten_dang_nhap'}),
+            'username': forms.TextInput(attrs={'class': 'field', 'placeholder': 'nhap_ten_dang_nhap'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Style cho 2 ô mật khẩu mặc định của Django
-        self.fields['password1'].widget.attrs.update({'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'})
-        self.fields['password2'].widget.attrs.update({'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'})
+        self.fields['password1'].widget.attrs.update({'class': 'field'})
+        self.fields['password2'].widget.attrs.update({'class': 'field'})
+
+class CourseForm(forms.ModelForm):
+    class Meta:
+        model = Course
+        fields = ['code', 'name', 'description']
+        labels = {
+            'code': 'Mã môn',
+            'name': 'Tên môn học',
+            'description': 'Ghi chú',
+        }
+        widgets = {
+            'code': forms.TextInput(attrs={'class': 'field', 'placeholder': 'VD: PY101'}),
+            'name': forms.TextInput(attrs={'class': 'field', 'placeholder': 'VD: Lập trình Python'}),
+            'description': forms.Textarea(attrs={'class': 'field', 'rows': 3}),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_code(self):
+        code = self.cleaned_data['code'].strip().upper()
+        if self.user and Course.objects.filter(user=self.user, code=code).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('Bạn đã có môn với mã này.')
+        return code
+
+
+class StudyHoursForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['sleep_hours', 'preferred_study_hours']
+        labels = {
+            'sleep_hours': 'Giờ ngủ (HH:MM-HH:MM)',
+            'preferred_study_hours': 'Khung giờ học ưa thích',
+        }
+        widgets = {
+            'sleep_hours': forms.TextInput(attrs={'class': 'field', 'placeholder': '23:00-06:00'}),
+            'preferred_study_hours': forms.TextInput(attrs={'class': 'field', 'placeholder': '19:00-22:00'}),
+        }
+
+    def _clean_range(self, name):
+        value = self.cleaned_data[name].replace(' ', '')
+        try:
+            start, end = value.split('-')
+            for part in (start, end):
+                hour, minute = part.split(':')
+                if not (0 <= int(hour) < 24 and 0 <= int(minute) < 60):
+                    raise ValueError
+        except ValueError:
+            raise forms.ValidationError('Định dạng đúng: HH:MM-HH:MM')
+        return value
+
+    def clean_sleep_hours(self):
+        return self._clean_range('sleep_hours')
+
+    def clean_preferred_study_hours(self):
+        return self._clean_range('preferred_study_hours')
+
+
+class IcsImportForm(forms.Form):
+    ics_file = forms.FileField(
+        label='Tệp lịch .ics',
+        widget=forms.ClearableFileInput(attrs={'class': 'field', 'accept': '.ics,text/calendar'}),
+    )
+
+    def clean_ics_file(self):
+        uploaded = self.cleaned_data['ics_file']
+        if not uploaded.name.lower().endswith('.ics'):
+            raise forms.ValidationError('Chỉ nhận tệp .ics.')
+        if uploaded.size > 2 * 1024 * 1024:
+            raise forms.ValidationError('Tệp .ics không được vượt quá 2 MB.')
+        return uploaded

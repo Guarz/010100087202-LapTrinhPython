@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mx-auto grid max-w-5xl overflow-hidden rounded-3xl border border-slate-200/70 bg-white shadow-soft lg:grid-cols-2">
+    <div class="relative hidden overflow-hidden bg-gradient-to-br from-brand-600 via-violet-600 to-fuchsia-600 p-10 text-white lg:flex lg:flex-col lg:justify-between">
+        <div class="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-white/10 blur-2xl"></div>
+        <div>
+            <span class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold"><i class="fa-solid fa-wand-magic-sparkles"></i>AI gợi ý lịch học</span>
+            <h2 class="mt-5 text-3xl font-extrabold leading-tight">Học đúng lúc,<br>không lo trễ hạn.</h2>
+        </div>
+        <ul class="relative space-y-4 text-sm">
+            <li class="flex gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/15"><i class="fa-regular fa-calendar"></i></span><span><b class="block">Tự động xếp lịch tuần</b><span class="text-white/75">Theo ưu tiên, thời lượng và lịch bận.</span></span></li>
+            <li class="flex gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/15"><i class="fa-solid fa-gauge-high"></i></span><span><b class="block">Cảnh báo rủi ro trễ hạn</b><span class="text-white/75">Điểm 0–100 cho từng nhiệm vụ.</span></span></li>
+            <li class="flex gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/15"><i class="fa-solid fa-stopwatch"></i></span><span><b class="block">Pomodoro & thống kê</b><span class="text-white/75">Theo dõi thời gian tập trung thực tế.</span></span></li>
+        </ul>
+    </div>
+    <div class="p-6 sm:p-10">
+        {% block auth_form %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

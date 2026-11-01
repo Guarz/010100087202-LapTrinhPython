@@ -1,102 +1,153 @@
 # planner/ai_assistant.py
-import os
 import json
-from datetime import datetime, timedelta
+import os
+from datetime import timedelta
+
+from django.conf import settings
 from django.utils import timezone
-from .models import Task, ScheduleBlock, PomodoroLog, UserProfile
 
-def analyze_schedule_with_ai(user):
-    """
-    1. Tổng hợp dữ liệu: Task chưa xong, lịch bận tuần, nhật ký Pomodoro.
-    2. Đánh giá rủi ro trễ hạn theo thuật toán định lượng.
-    3. Gửi ngữ cảnh sang OpenAI API để phân tích chuyên sâu.
-    """
-    now = timezone.now()
-    today = now.date()
+from .models import PomodoroLog, ScheduleBlock
+from .risk import assess_user_tasks
 
-    # A. Thu thập các task chưa hoàn thành
-    pending_tasks = Task.objects.filter(
-        user=user,
-        status__in=['todo', 'in_progress']
-    ).order_by('deadline')
 
-    tasks_data = []
-    total_estimated_minutes = 0
-    overdue_risk_count = 0
+def _today_blocks(user, now):
+    local_now = timezone.localtime(now)
+    start = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=1)
+    return list(
+        ScheduleBlock.objects
+        .filter(user=user, start_time__gte=start, start_time__lt=end)
+        .order_by('start_time')
+    )
 
-    for t in pending_tasks:
-        hours_left = (t.deadline - now).total_seconds() / 3600
-        # Đánh giá sơ bộ: nếu thời gian còn lại trước hạn < thời lượng ước tính * 1.5
-        is_risky = (hours_left > 0) and (hours_left * 60 < t.estimated_minutes * 1.5)
-        if is_risky or hours_left <= 0:
-            overdue_risk_count += 1
 
-        total_estimated_minutes += t.estimated_minutes
-        tasks_data.append({
-            "title": t.title,
-            "subject": t.subject_name or "Chung",
-            "deadline": t.deadline.strftime("%H:%M %d/%m/%Y"),
-            "estimated_minutes": t.estimated_minutes,
-            "priority": "Cao" if t.priority == 1 else ("Vừa" if t.priority == 2 else "Thấp"),
-            "hours_until_deadline": round(hours_left, 1)
-        })
-
-    # B. Thu thập thói quen học từ PomodoroLog (7 ngày gần nhất)
+def build_context(user, now=None):
+    """Tổng hợp dữ liệu dùng cho cả AI và phân tích dự phòng."""
+    now = now or timezone.now()
+    risks = assess_user_tasks(user, now)
     week_ago = now - timedelta(days=7)
-    recent_pomo = PomodoroLog.objects.filter(user=user, start_time__gte=week_ago, completed=True)
-    total_pomo_minutes = sum(p.duration_minutes for p in recent_pomo)
-    pomo_count = recent_pomo.count()
+    recent_pomo = PomodoroLog.objects.filter(
+        user=user, start_time__gte=week_ago,
+    ).exclude(status='deferred').filter(completed=True)
+    pomo_minutes = sum(
+        (p.actual_seconds // 60) if p.actual_seconds else p.duration_minutes
+        for p in recent_pomo
+    )
+    return {
+        'now': now,
+        'risks': risks,
+        'today_blocks': _today_blocks(user, now),
+        'pomo_count': recent_pomo.count(),
+        'pomo_minutes': pomo_minutes,
+    }
 
-    # C. Kiểm tra API Key của OpenAI
-    api_key = os.getenv("OPENAI_API_KEY")
 
-    # Trường hợp chưa cấu hình API Key: Trả về phân tích Heuristic dự phòng (không làm crash app)
+def _fallback_insights(ctx):
+    risks = ctx['risks']
+    blocks = ctx['today_blocks']
+    high = [(t, r) for t, r in risks if r.level == 'high']
+    medium = [(t, r) for t, r in risks if r.level == 'medium']
+    total_remaining = sum(r.remaining_minutes for _, r in risks)
+
+    if blocks:
+        first = blocks[0]
+        plan = (
+            f"Hôm nay có {len(blocks)} khối lịch, bắt đầu với "
+            f"\"{first.title}\" lúc {timezone.localtime(first.start_time):%H:%M}."
+        )
+    else:
+        plan = 'Hôm nay chưa có khối lịch nào — hãy bấm "Tự động lập lịch tuần".'
+
+    summary = (
+        f"Bạn còn {len(risks)} nhiệm vụ mở, tổng khoảng "
+        f"{total_remaining // 60} giờ {total_remaining % 60} phút cần học. {plan}"
+    )
+    if risks:
+        top_task, top_risk = risks[0]
+        summary += f" Ưu tiên số 1: \"{top_task.title}\" ({top_risk.score}/100 điểm rủi ro)."
+
+    warnings = [
+        f"{t.title}: {r.score}/100 — {r.reasons[0] if r.reasons else r.label}"
+        for t, r in (high + medium)[:3]
+    ]
+
+    if ctx['pomo_count'] == 0:
+        advice = 'Tuần này bạn chưa hoàn thành phiên Pomodoro nào. Hãy bắt đầu bằng 2 phiên 25 phút cho nhiệm vụ rủi ro cao nhất.'
+    else:
+        advice = (
+            f"7 ngày qua bạn hoàn thành {ctx['pomo_count']} phiên ({ctx['pomo_minutes']} phút). "
+            'Duy trì tối thiểu 4 phiên mỗi ngày và học nhiệm vụ rủi ro cao vào đầu buổi.'
+        )
+
+    return {
+        'daily_summary': summary,
+        'risk_warnings': warnings,
+        'habit_advice': advice,
+        'is_ai_generated': False,
+    }
+
+
+def analyze_schedule_with_ai(user, now=None):
+    """
+    1. Tổng hợp: task + điểm rủi ro, lịch hôm nay, Pomodoro 7 ngày.
+    2. Có OPENAI_API_KEY: gửi ngữ cảnh cho OpenAI để tóm tắt ngày.
+    3. Không có key hoặc lỗi: trả về phân tích dự phòng (không làm hỏng trang).
+    """
+    ctx = build_context(user, now)
+    fallback = _fallback_insights(ctx)
+
+    api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
-        return {
-            "daily_summary": f"Hôm nay bạn có {len(tasks_data)} nhiệm vụ đang chờ xử lý với tổng thời lượng ước tính khoảng {total_estimated_minutes // 60} giờ {total_estimated_minutes % 60} phút.",
-            "risk_warnings": [
-                f"Phát hiện {overdue_risk_count} nhiệm vụ có nguy cơ trễ hạn hoặc thời gian gấp rút!" if overdue_risk_count > 0 else "Tiến độ hiện tại an toàn, chưa có deadline nguy hiểm."
-            ],
-            "habit_advice": f"Trong 7 ngày qua, bạn đã hoàn thành {pomo_count} phiên Pomodoro ({total_pomo_minutes} phút). Hãy duy trì tối thiểu 4 phiên mỗi ngày để đảm bảo hoàn thành bài tập.",
-            "is_ai_generated": False
-        }
+        return fallback
 
-    # D. Gọi OpenAI API (Structured JSON)
+    tasks_data = [
+        {
+            'title': t.title,
+            'subject': t.subject_name or 'Chung',
+            'deadline': timezone.localtime(t.deadline).strftime('%H:%M %d/%m/%Y'),
+            'remaining_minutes': r.remaining_minutes,
+            'risk_score': r.score,
+            'risk_reasons': r.reasons,
+        }
+        for t, r in ctx['risks'][:10]
+    ]
+    blocks_data = [
+        {
+            'title': b.title,
+            'start': timezone.localtime(b.start_time).strftime('%H:%M'),
+            'end': timezone.localtime(b.end_time).strftime('%H:%M'),
+        }
+        for b in ctx['today_blocks']
+    ]
+
     try:
         from openai import OpenAI
         client = OpenAI(api_key=api_key)
-
-        prompt = f"""
-        Bạn là trợ lý học tập AI cá nhân cho sinh viên. Hãy phân tích dữ liệu thực tế sau đây:
-        - Danh sách bài tập/deadline: {json.dumps(tasks_data, ensure_ascii=False)}
-        - Lịch sử Pomodoro 7 ngày: {pomo_count} phiên hoàn thành, tổng cộng {total_pomo_minutes} phút tập trung.
-
-        Yêu cầu trả về đúng định dạng JSON có cấu trúc sau (không kèm markdown ngoài JSON):
-        {{
-            "daily_summary": "Tóm tắt ngắn gọn việc ưu tiên cần làm trong ngày hôm nay",
-            "risk_warnings": ["Danh sách 1-3 cảnh báo rủi ro trễ hạn cụ thể kèm tên môn"],
-            "habit_advice": "1 lời khuyên thực tế để cải thiện thói quen học và phân bổ thời gian"
-        }}
-        """
-
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "Bạn là chuyên gia cố vấn lập kế hoạch học tập. Trả về định dạng JSON thuần."},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.7
+        prompt = (
+            'Phân tích dữ liệu học tập của sinh viên hôm nay.\n'
+            f'- Nhiệm vụ kèm điểm rủi ro trễ hạn (0-100): {json.dumps(tasks_data, ensure_ascii=False)}\n'
+            f'- Lịch hôm nay: {json.dumps(blocks_data, ensure_ascii=False)}\n'
+            f"- Pomodoro 7 ngày: {ctx['pomo_count']} phiên, {ctx['pomo_minutes']} phút.\n\n"
+            'Trả về JSON: {"daily_summary": "tóm tắt ngày + phân bổ thời gian cụ thể theo giờ", '
+            '"risk_warnings": ["1-3 cảnh báo cụ thể kèm tên nhiệm vụ"], '
+            '"habit_advice": "1 lời khuyên thực tế"}'
         )
-
+        response = client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[
+                {'role': 'system', 'content': 'Bạn là cố vấn lập kế hoạch học tập. Trả lời bằng tiếng Việt, JSON thuần.'},
+                {'role': 'user', 'content': prompt},
+            ],
+            response_format={'type': 'json_object'},
+            temperature=0.5,
+        )
         result = json.loads(response.choices[0].message.content)
-        result["is_ai_generated"] = True
-        return result
-
-    except Exception as e:
         return {
-            "daily_summary": "Đang đồng bộ phân tích lịch học...",
-            "risk_warnings": [f"Lỗi kết nối AI: {str(e)}"],
-            "habit_advice": "Hãy ưu tiên giải quyết các bài tập có mức ưu tiên Cao trước.",
-            "is_ai_generated": False
+            'daily_summary': result.get('daily_summary') or fallback['daily_summary'],
+            'risk_warnings': result.get('risk_warnings') or fallback['risk_warnings'],
+            'habit_advice': result.get('habit_advice') or fallback['habit_advice'],
+            'is_ai_generated': True,
         }
+    except Exception as exc:  # noqa: BLE001 - AI chỉ là tính năng hỗ trợ
+        fallback['ai_error'] = str(exc)
+        return fallback
