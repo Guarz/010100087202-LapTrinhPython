@@ -19,7 +19,7 @@
                 {% if field.errors %}
                     <p class="mt-1 text-xs text-rose-600">{{ field.errors.0 }}</p>
                 {% elif field.help_text and field.name == 'password1' %}
-                    <details class="mt-1 text-[11px] text-slate-400"><summary class="cursor-pointer">Yêu cầu mật khẩu</summary>{{ field.help_text }}</details>
+                    <details class="mt-1 text-[11px] text-slate-500"><summary class="cursor-pointer">Yêu cầu mật khẩu</summary>{{ field.help_text }}</details>
                 {% endif %}
             </div>
         {% endfor %}

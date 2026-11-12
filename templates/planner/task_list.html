@@ -10,7 +10,7 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <p class="text-sm font-medium text-brand-600">{% now "l, d/m/Y" %}</p>
-            <h1 class="page-title">Xin chào, {{ user.username }} 👋</h1>
+            <h1 class="page-title">Xin chào, {{ user.username }}</h1>
             <p class="page-sub">Theo dõi deadline, rủi ro trễ hạn và kế hoạch học hôm nay.</p>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -30,7 +30,7 @@
                 <span class="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600"><i class="fa-solid fa-list-check text-sm"></i></span>
             </div>
             <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ stats.open }}</p>
-            <p class="text-xs text-slate-400">nhiệm vụ chưa xong</p>
+            <p class="text-xs text-slate-500">nhiệm vụ chưa xong</p>
         </div>
         <div class="card p-4 sm:p-5">
             <div class="flex items-center justify-between">
@@ -38,7 +38,7 @@
                 <span class="grid h-8 w-8 place-items-center rounded-lg bg-rose-50 text-rose-600"><i class="fa-solid fa-fire text-sm"></i></span>
             </div>
             <p class="mt-2 text-3xl font-extrabold {% if stats.high_risk %}text-rose-600{% else %}text-slate-900{% endif %}">{{ stats.high_risk }}</p>
-            <p class="text-xs text-slate-400">có thể trễ hạn</p>
+            <p class="text-xs text-slate-500">có thể trễ hạn</p>
         </div>
         <div class="card p-4 sm:p-5">
             <div class="flex items-center justify-between">
@@ -46,15 +46,15 @@
                 <span class="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-600"><i class="fa-solid fa-circle-check text-sm"></i></span>
             </div>
             <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ stats.completed }}</p>
-            <p class="text-xs text-slate-400">nhiệm vụ</p>
+            <p class="text-xs text-slate-500">nhiệm vụ</p>
         </div>
         <div class="card p-4 sm:p-5">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-slate-500">Tập trung 7 ngày</span>
                 <span class="grid h-8 w-8 place-items-center rounded-lg bg-amber-50 text-amber-600"><i class="fa-solid fa-stopwatch text-sm"></i></span>
             </div>
-            <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ stats.focus_minutes }}<span class="text-base font-bold text-slate-400"> phút</span></p>
-            <p class="text-xs text-slate-400">Pomodoro hoàn thành</p>
+            <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ stats.focus_minutes }}<span class="text-base font-bold text-slate-500"> phút</span></p>
+            <p class="text-xs text-slate-500">Pomodoro hoàn thành</p>
         </div>
     </div>
 
@@ -63,11 +63,11 @@
         <section class="lg:col-span-2 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="section-title"><i class="fa-solid fa-list-check text-brand-500"></i>Nhiệm vụ & deadline</h2>
-                <div class="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
-                    <a href="?status=open" class="rounded-lg px-3 py-1.5 {% if status_filter == 'open' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">Đang mở</a>
-                    <a href="?status=completed" class="rounded-lg px-3 py-1.5 {% if status_filter == 'completed' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">Đã xong</a>
-                    <a href="?status=all" class="rounded-lg px-3 py-1.5 {% if status_filter == 'all' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">Tất cả</a>
-                </div>
+                <nav class="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-semibold" aria-label="Lọc nhiệm vụ">
+                    <a href="?status=open" {% if status_filter == 'open' %}aria-current="page" {% endif %}class="rounded-lg px-3 py-1.5 {% if status_filter == 'open' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">Đang mở</a>
+                    <a href="?status=completed" {% if status_filter == 'completed' %}aria-current="page" {% endif %}class="rounded-lg px-3 py-1.5 {% if status_filter == 'completed' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">Đã xong</a>
+                    <a href="?status=all" {% if status_filter == 'all' %}aria-current="page" {% endif %}class="rounded-lg px-3 py-1.5 {% if status_filter == 'all' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">Tất cả</a>
+                </nav>
             </div>
 
             {% if task_rows %}
@@ -77,20 +77,24 @@
                         <article class="card group relative overflow-hidden p-4 sm:p-5 transition hover:border-slate-300">
                             <span class="absolute inset-y-0 left-0 w-1
                                 {% if task.status == 'completed' %}bg-emerald-400{% elif risk.level == 'high' %}bg-rose-500{% elif risk.level == 'medium' %}bg-amber-400{% else %}bg-brand-300{% endif %}"></span>
-                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <div class="flex items-start gap-3 sm:items-center">
                                 <form method="POST" action="{% url 'toggle_task_status' task.id %}" class="shrink-0">
                                     {% csrf_token %}
-                                    <button type="submit" title="{% if task.status == 'completed' %}Làm lại{% else %}Đánh dấu xong{% endif %}"
-                                        class="grid h-7 w-7 place-items-center rounded-full border-2 transition
-                                        {% if task.status == 'completed' %}border-emerald-500 bg-emerald-500 text-white{% else %}border-slate-300 text-transparent hover:border-emerald-500 hover:text-emerald-500{% endif %}">
-                                        <i class="fa-solid fa-check text-xs"></i>
-                                        <span class="sr-only">{% if task.status == 'completed' %}Làm lại{% else %}Xong{% endif %}</span>
+                                    <button type="submit" title="{% if task.status == 'completed' %}Đánh dấu chưa xong{% else %}Đánh dấu xong{% endif %}"
+                                        aria-pressed="{% if task.status == 'completed' %}true{% else %}false{% endif %}"
+                                        class="group/check -m-1.5 grid h-10 w-10 place-items-center rounded-full">
+                                        <span class="grid h-7 w-7 place-items-center rounded-full border-2 transition
+                                            {% if task.status == 'completed' %}border-emerald-500 bg-emerald-500 text-white{% else %}border-slate-300 text-transparent group-hover/check:border-emerald-500 group-hover/check:text-emerald-500{% endif %}">
+                                            <i class="fa-solid fa-check text-xs" aria-hidden="true"></i>
+                                        </span>
+                                        <span class="sr-only">{% if task.status == 'completed' %}Đánh dấu chưa xong: {% else %}Đánh dấu xong: {% endif %}{{ task.title }}</span>
                                     </button>
                                 </form>
 
+                                <div class="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
                                 <div class="min-w-0 flex-1 space-y-1.5">
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <h3 class="text-[15px] font-semibold {% if task.status == 'completed' %}line-through text-slate-400{% else %}text-slate-900{% endif %}">{{ task.title }}</h3>
+                                        <h3 class="text-[15px] font-semibold {% if task.status == 'completed' %}line-through text-slate-500{% else %}text-slate-900{% endif %}">{{ task.title }}</h3>
                                         {% if task.course %}
                                             <span class="badge bg-slate-100 text-slate-600">{{ task.course.code }} · {{ task.course.name }}</span>
                                         {% elif task.subject_name %}
@@ -105,7 +109,7 @@
                                         {% endif %}
                                     </div>
                                     <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-                                        <span><i class="fa-regular fa-clock mr-1 {% if risk.hours_left < 24 and task.status != 'completed' %}text-rose-500{% endif %}"></i>{{ task.deadline|date:"H:i · d/m/Y" }}{% if task.status != 'completed' %} <span class="text-slate-400">({% if risk.hours_left > 0 %}còn {{ task.deadline|countdown }}{% else %}quá hạn{% endif %})</span>{% endif %}</span>
+                                        <span><i class="fa-regular fa-clock mr-1 {% if risk.hours_left < 24 and task.status != 'completed' %}text-rose-500{% endif %}"></i>{{ task.deadline|date:"H:i · d/m/Y" }}{% if task.status != 'completed' %} <span class="text-slate-500">({% if risk.hours_left > 0 %}còn {{ task.deadline|countdown }}{% else %}quá hạn{% endif %})</span>{% endif %}</span>
                                         <span><i class="fa-solid fa-hourglass-half mr-1"></i>{{ task.estimated_minutes }} phút{% if task.status != 'completed' and risk.remaining_minutes != task.estimated_minutes %} · còn {{ risk.remaining_minutes }}{% endif %}</span>
                                         {% if task.material_url %}
                                             <a href="{{ task.material_url }}" target="_blank" rel="noopener" class="font-medium text-brand-600 hover:underline"><i class="fa-solid fa-link mr-1"></i>Tài liệu</a>
@@ -121,23 +125,24 @@
 
                                 <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-3 sm:border-0 sm:pt-0">
                                     {% if task.status != 'completed' %}
-                                        <div class="text-right" title="Điểm rủi ro trễ hạn">
+                                        <div class="text-right" title="Điểm rủi ro trễ hạn" aria-label="Điểm rủi ro {{ risk.score }}/100, {{ risk.label }}">
                                             <div class="flex items-center gap-2">
                                                 <div class="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
                                                     <div class="h-full rounded-full {% if risk.level == 'high' %}bg-rose-500{% elif risk.level == 'medium' %}bg-amber-400{% else %}bg-emerald-400{% endif %}" style="width: {{ risk.score }}%"></div>
                                                 </div>
                                                 <span class="text-sm font-bold {% if risk.level == 'high' %}text-rose-600{% elif risk.level == 'medium' %}text-amber-600{% else %}text-emerald-600{% endif %}">{{ risk.score }}</span>
                                             </div>
-                                            <p class="text-[10px] font-medium text-slate-400">{{ risk.label }}</p>
+                                            <p class="text-[11px] font-medium text-slate-500">{{ risk.label }}</p>
                                         </div>
                                     {% endif %}
                                     <div class="flex items-center gap-1">
-                                        <a href="{% url 'edit_task' task.id %}" class="btn-ghost btn-sm" title="Sửa"><i class="fa-solid fa-pen"></i><span class="sm:hidden">Sửa</span></a>
-                                        <form method="POST" action="{% url 'delete_task' task.id %}" onsubmit="return confirm('Bạn có chắc muốn xóa?')">
+                                        <a href="{% url 'edit_task' task.id %}" class="btn-ghost btn-sm" title="Sửa" aria-label="Sửa {{ task.title }}"><i class="fa-solid fa-pen" aria-hidden="true"></i><span class="sm:hidden">Sửa</span></a>
+                                        <form method="POST" action="{% url 'delete_task' task.id %}" onsubmit="return confirm('Xóa nhiệm vụ này? Thao tác không thể hoàn tác.')">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn-danger btn-sm" aria-label="Xóa {{ task.title }}"><i class="fa-solid fa-trash"></i></button>
+                                            <button type="submit" class="btn-danger btn-sm" title="Xóa" aria-label="Xóa {{ task.title }}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
                                         </form>
                                     </div>
+                                </div>
                                 </div>
                             </div>
                         </article>
@@ -166,7 +171,7 @@
                         {% for block in today_blocks %}
                             <li class="relative">
                                 <span class="absolute -left-[23px] top-1.5 h-3 w-3 rounded-full ring-4 ring-white {% if block.is_fixed %}bg-slate-400{% elif block.status == 'suggested' %}bg-violet-500{% else %}bg-brand-600{% endif %}"></span>
-                                <p class="text-xs font-semibold text-slate-400">{{ block.start_time|time:"H:i" }} – {{ block.end_time|time:"H:i" }}</p>
+                                <p class="text-xs font-semibold text-slate-500">{{ block.start_time|time:"H:i" }} – {{ block.end_time|time:"H:i" }}</p>
                                 <p class="text-sm font-medium text-slate-800">{{ block.title }}</p>
                             </li>
                         {% endfor %}

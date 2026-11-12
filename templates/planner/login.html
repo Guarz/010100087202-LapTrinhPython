@@ -13,17 +13,17 @@
     <form method="POST" class="space-y-4">
         {% csrf_token %}
         {% if form.errors %}
-            <div class="flex items-center gap-2 rounded-xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-600">
-                <i class="fa-solid fa-circle-exclamation"></i>Tên đăng nhập hoặc mật khẩu không chính xác.
+            <div role="alert" class="flex items-center gap-2 rounded-xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-700">
+                <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>Tên đăng nhập hoặc mật khẩu không chính xác.
             </div>
         {% endif %}
         <div>
             <label for="id_username" class="label">Tên đăng nhập</label>
-            <input id="id_username" type="text" name="username" required autofocus autocomplete="username" class="field">
+            <input id="id_username" type="text" name="username" value="{{ form.username.value|default:'' }}" required {% if not form.errors %}autofocus{% endif %} autocomplete="username" autocapitalize="none" spellcheck="false" class="field">
         </div>
         <div>
             <label for="id_password" class="label">Mật khẩu</label>
-            <input id="id_password" type="password" name="password" required autocomplete="current-password" class="field">
+            <input id="id_password" type="password" name="password" required {% if form.errors %}autofocus{% endif %} autocomplete="current-password" class="field">
         </div>
         <button type="submit" class="btn-primary w-full py-3">Đăng nhập</button>
     </form>

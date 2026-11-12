@@ -60,7 +60,7 @@
                                     <i class="fa-solid {% if item.category == 'part_time' %}fa-briefcase{% elif item.category == 'personal' %}fa-user{% else %}fa-school{% endif %}"></i>
                                 </span>
                                 <div>
-                                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ item.get_day_of_week_display }}</p>
+                                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">{{ item.get_day_of_week_display }}</p>
                                     <h3 class="font-semibold text-slate-900">{{ item.title }}</h3>
                                     <p class="text-xs text-slate-500"><i class="fa-regular fa-clock mr-1"></i>{{ item.start_time|time:"H:i" }} – {{ item.end_time|time:"H:i" }}</p>
                                 </div>

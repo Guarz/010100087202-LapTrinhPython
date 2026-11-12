@@ -243,7 +243,7 @@
     background: var(--pm-blue, #014BAA);
     color: #FFFFFF;
     border-color: var(--pm-blue, #014BAA);
-    box-shadow: 0 3px 10px rgba(1, 75, 170, .12);
+    box-shadow: 0 3px 10px rgba(79, 70, 229, .12);
 }
 
 
@@ -347,8 +347,8 @@
 
 #pomodoro-app .pm-focus-custom-input-row input:focus {
     outline: none;
-    border-color: #014BAA;
-    box-shadow: 0 0 0 3px rgba(1, 75, 170, .10);
+    border-color: #4F46E5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .10);
 }
 
 #pomodoro-app .pm-focus-custom-input-row span {
@@ -435,7 +435,7 @@
     width: 34px;
     height: 34px;
 
-    background: #E6EDF7;
+    background: #EEF2FF;
     color: var(--pm-blue, #014BAA);
     border-radius: 8px;
 }

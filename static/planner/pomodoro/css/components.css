@@ -34,7 +34,7 @@
 #pomodoro-app button:focus-visible,
 #pomodoro-app input:focus-visible,
 #pomodoro-app select:focus-visible {
-    outline: 3px solid rgba(1, 75, 170, 0.25);
+    outline: 3px solid rgba(79, 70, 229, 0.25);
     outline-offset: 2px;
 }
 
@@ -87,7 +87,7 @@
 
 #pomodoro-app .pm-input:focus {
     border-color: var(--pm-blue, #014BAA);
-    box-shadow: 0 0 0 3px rgba(1, 75, 170, .10);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .10);
 }
 
 
@@ -242,7 +242,7 @@
 #pomodoro-app .pm-task-selection.is-selected .pm-input {
     border-color: var(--pm-blue, #014BAA);
     background: #F5F9FF;
-    box-shadow: 0 0 0 2px rgba(1, 75, 170, .05);
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, .05);
 }
 
 /* Hàng trạng thái và nút bỏ chọn */

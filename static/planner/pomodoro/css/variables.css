@@ -108,68 +108,68 @@
        04. BRAND COLORS
        ===================================================== */
 
-    --pm-primary: #014BAA;
-    --pm-cream: #F8F3F0;
+    --pm-primary: #4F46E5;
+    --pm-cream: #F8FAFC;
 
 
     /* =====================================================
        05. AARHUSIAN SKY - SHADES
        ===================================================== */
 
-    --pm-blue-90: #014499;
-    --pm-blue-80: #013C88;
-    --pm-blue-70: #013577;
-    --pm-blue-60: #012D66;
-    --pm-blue-50: #012655;
-    --pm-blue-40: #001E44;
-    --pm-blue-30: #001733;
-    --pm-blue-20: #000F22;
-    --pm-blue-10: #000811;
+    --pm-blue-90: #4840D6;
+    --pm-blue-80: #4338CA;
+    --pm-blue-70: #3730A3;
+    --pm-blue-60: #312E81;
+    --pm-blue-50: #29266B;
+    --pm-blue-40: #211F56;
+    --pm-blue-30: #191741;
+    --pm-blue-20: #100F2B;
+    --pm-blue-10: #080816;
 
 
     /* =====================================================
        06. AARHUSIAN SKY - TINTS
        ===================================================== */
 
-    --pm-blue-t10: #1A5DB3;
-    --pm-blue-t20: #346FBB;
-    --pm-blue-t30: #4D81C4;
-    --pm-blue-t40: #6793CC;
-    --pm-blue-t50: #80A5D5;
-    --pm-blue-t60: #99B7DD;
-    --pm-blue-t70: #B3C9E6;
-    --pm-blue-t80: #CCDBEE;
-    --pm-blue-t90: #E6EDF7;
+    --pm-blue-t10: #6366F1;
+    --pm-blue-t20: #7376F3;
+    --pm-blue-t30: #818CF8;
+    --pm-blue-t40: #939CF9;
+    --pm-blue-t50: #A5B4FC;
+    --pm-blue-t60: #B8C3FD;
+    --pm-blue-t70: #C7D2FE;
+    --pm-blue-t80: #E0E7FF;
+    --pm-blue-t90: #EEF2FF;
 
 
     /* =====================================================
        07. WHITE CHALK - SHADES
        ===================================================== */
 
-    --pm-cream-s10: #DFDBD8;
-    --pm-cream-s20: #C6C2C0;
-    --pm-cream-s30: #AEAAA8;
-    --pm-cream-s40: #959290;
-    --pm-cream-s50: #7C7A78;
-    --pm-cream-s60: #636160;
-    --pm-cream-s70: #4A4948;
-    --pm-cream-s80: #323130;
-    --pm-cream-s90: #191818;
+    --pm-cream-s10: #E2E8F0;
+    --pm-cream-s20: #CBD5E1;
+    --pm-cream-s30: #A7B3C4;
+    --pm-cream-s40: #94A3B8;
+    --pm-cream-s50: #64748B;
+    --pm-cream-s60: #475569;
+    --pm-cream-s70: #334155;
+    --pm-cream-s80: #1E293B;
+    --pm-cream-s90: #0F172A;
 
 
     /* =====================================================
        08. WHITE CHALK - TINTS
        ===================================================== */
 
-    --pm-cream-t10: #F9F4F2;
-    --pm-cream-t20: #F9F5F3;
-    --pm-cream-t30: #FAF7F5;
-    --pm-cream-t40: #FBF8F6;
-    --pm-cream-t50: #FCF9F8;
-    --pm-cream-t60: #FCFAF9;
-    --pm-cream-t70: #FDFBFB;
-    --pm-cream-t80: #FEFDFC;
-    --pm-cream-t90: #FEFEFE;
+    --pm-cream-t10: #F8FAFC;
+    --pm-cream-t20: #F9FAFC;
+    --pm-cream-t30: #F9FBFD;
+    --pm-cream-t40: #FAFBFD;
+    --pm-cream-t50: #FBFCFE;
+    --pm-cream-t60: #FCFDFE;
+    --pm-cream-t70: #FDFDFE;
+    --pm-cream-t80: #FEFEFF;
+    --pm-cream-t90: #FFFFFF;
 
 
     /* =====================================================

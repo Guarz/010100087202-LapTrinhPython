@@ -50,27 +50,37 @@
             .page-sub { @apply text-sm text-slate-500 mt-1; }
             .section-title { @apply text-base font-bold text-slate-900 flex items-center gap-2; }
         }
+        @layer base {
+            a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
+                @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white;
+            }
+            button, a, summary { touch-action: manipulation; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 {% with url_name=request.resolver_match.url_name %}
 <body class="min-h-screen bg-slate-50 text-slate-800 flex flex-col antialiased bg-[radial-gradient(1200px_500px_at_10%_-10%,#e0e7ff_0%,transparent_60%),radial-gradient(900px_400px_at_100%_0%,#f5f3ff_0%,transparent_55%)]">
+    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-[70] focus:rounded-xl focus:bg-white focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-brand-700 focus:shadow-lift">Bỏ qua đến nội dung chính</a>
 
     <nav class="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur-xl">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex h-16 items-center justify-between gap-4">
-                <a href="{% url 'task_list' %}" class="flex items-center gap-2.5 shrink-0">
+                <a href="{% url 'task_list' %}" class="flex items-center gap-2.5 shrink-0 rounded-xl" aria-label="StudyPlanner - Trang tổng quan">
                     <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-lift">
                         <i class="fa-solid fa-graduation-cap"></i>
                     </span>
                     <span class="leading-tight">
                         <span class="block text-[15px] font-extrabold tracking-tight text-slate-900">StudyPlanner</span>
-                        <span class="block text-[10px] font-semibold uppercase tracking-[.14em] text-brand-600">AI gợi ý lịch</span>
+                        <span class="block text-[11px] font-semibold uppercase tracking-[.14em] text-brand-600">AI gợi ý lịch</span>
                     </span>
                 </a>
 
                 {% if user.is_authenticated %}
-                <div class="hidden lg:flex items-center gap-1">
+                <div class="hidden lg:flex items-center gap-1" role="navigation" aria-label="Điều hướng chính">
                     <a href="{% url 'task_list' %}" class="nav-link {% if url_name == 'task_list' or url_name == 'edit_task' %}active{% endif %}"><i class="fa-solid fa-table-columns w-4 text-center"></i>Tổng quan</a>
                     <a href="{% url 'calendar_view' %}" class="nav-link {% if 'calendar' in url_name or 'schedule_block' in url_name %}active{% endif %}"><i class="fa-regular fa-calendar w-4 text-center"></i>Lịch</a>
                     <a href="{% url 'recurring_list' %}" class="nav-link {% if url_name == 'recurring_list' %}active{% endif %}"><i class="fa-solid fa-business-time w-4 text-center"></i>Lịch bận</a>
@@ -84,10 +94,10 @@
                     {% if user.is_authenticated %}
                         <!-- Chuông nhắc việc -->
                         <div class="relative" data-dropdown>
-                            <button type="button" data-dropdown-toggle class="relative grid h-10 w-10 place-items-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition" aria-label="Nhắc việc">
-                                <i class="fa-regular fa-bell text-lg"></i>
+                            <button type="button" data-dropdown-toggle aria-haspopup="true" aria-expanded="false" class="relative grid h-10 w-10 place-items-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition" aria-label="Nhắc việc{% if reminder_count %}: {{ reminder_count }} deadline sắp tới{% endif %}">
+                                <i class="fa-regular fa-bell text-lg" aria-hidden="true"></i>
                                 {% if reminder_count %}
-                                    <span class="absolute right-1.5 top-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">{{ reminder_count }}</span>
+                                    <span aria-hidden="true" class="absolute right-1.5 top-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">{{ reminder_count }}</span>
                                 {% endif %}
                             </button>
                             <div data-dropdown-menu class="hidden absolute right-0 mt-2 w-80 card p-2 z-50">
@@ -110,7 +120,7 @@
                                     </a>
                                 {% empty %}
                                     {% if not reminder_overdue_count %}
-                                        <p class="px-3 py-6 text-center text-sm text-slate-400"><i class="fa-regular fa-face-smile mr-1"></i>Không có deadline nào trong {{ reminder_hours }} giờ tới</p>
+                                        <p class="px-3 py-6 text-center text-sm text-slate-500"><i class="fa-regular fa-face-smile mr-1"></i>Không có deadline nào trong {{ reminder_hours }} giờ tới</p>
                                     {% endif %}
                                 {% endfor %}
                             </div>
@@ -118,10 +128,10 @@
 
                         <!-- Người dùng -->
                         <div class="relative hidden sm:block" data-dropdown>
-                            <button type="button" data-dropdown-toggle class="flex items-center gap-2 rounded-xl py-1.5 pl-1.5 pr-3 hover:bg-slate-100 transition">
+                            <button type="button" data-dropdown-toggle aria-haspopup="true" aria-expanded="false" aria-label="Tài khoản {{ user.username }}" class="flex items-center gap-2 rounded-xl py-1.5 pl-1.5 pr-3 hover:bg-slate-100 transition">
                                 <span class="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-amber-400 to-rose-500 text-xs font-bold uppercase text-white">{{ user.username|slice:":2" }}</span>
                                 <span class="text-sm font-semibold text-slate-700">{{ user.username }}</span>
-                                <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+                                <i class="fa-solid fa-chevron-down text-[10px] text-slate-500"></i>
                             </button>
                             <div data-dropdown-menu class="hidden absolute right-0 mt-2 w-52 card p-1.5 z-50">
                                 {% if user.is_staff %}
@@ -132,7 +142,7 @@
                             </div>
                         </div>
 
-                        <button id="mobile-menu-btn" type="button" class="lg:hidden grid h-10 w-10 place-items-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="Mở menu">
+                        <button id="mobile-menu-btn" type="button" class="lg:hidden grid h-10 w-10 place-items-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="Mở menu" aria-expanded="false" aria-controls="mobile-menu">
                             <i id="menu-icon" class="fa-solid fa-bars text-lg"></i>
                         </button>
                     {% else %}
@@ -144,7 +154,7 @@
         </div>
 
         {% if user.is_authenticated %}
-        <div id="mobile-menu" class="hidden lg:hidden absolute inset-x-0 top-16 border-b border-slate-200 bg-white px-4 pb-5 pt-3 shadow-2xl">
+        <div id="mobile-menu" role="navigation" aria-label="Điều hướng chính" class="hidden lg:hidden absolute inset-x-0 top-16 border-b border-slate-200 bg-white px-4 pb-5 pt-3 shadow-2xl">
             <div class="grid grid-cols-2 gap-2">
                 <a href="{% url 'task_list' %}" class="nav-link {% if url_name == 'task_list' %}active{% endif %}"><i class="fa-solid fa-table-columns w-4"></i>Tổng quan</a>
                 <a href="{% url 'calendar_view' %}" class="nav-link {% if 'calendar' in url_name %}active{% endif %}"><i class="fa-regular fa-calendar w-4"></i>Lịch</a>
@@ -164,7 +174,7 @@
 
     <!-- Thông báo (Django messages) -->
     {% if messages %}
-        <div id="toasts" class="fixed bottom-4 right-4 z-[60] flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2">
+        <div id="toasts" role="status" aria-live="polite" class="fixed bottom-4 right-4 z-[60] flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2">
             {% for message in messages %}
                 <div class="toast card flex items-start gap-3 p-3.5 pr-2 transition duration-300
                     {% if message.tags == 'error' %}border-rose-200{% elif message.tags == 'warning' %}border-amber-200{% elif message.tags == 'success' %}border-emerald-200{% endif %}">
@@ -173,17 +183,17 @@
                         <i class="fa-solid {% if message.tags == 'error' %}fa-xmark{% elif message.tags == 'warning' %}fa-triangle-exclamation{% elif message.tags == 'success' %}fa-check{% else %}fa-info{% endif %}"></i>
                     </span>
                     <p class="flex-1 text-sm text-slate-700">{{ message }}</p>
-                    <button type="button" class="toast-close grid h-7 w-7 place-items-center rounded-lg text-slate-400 hover:bg-slate-100" aria-label="Đóng"><i class="fa-solid fa-xmark text-xs"></i></button>
+                    <button type="button" class="toast-close grid h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Đóng"><i class="fa-solid fa-xmark text-xs"></i></button>
                 </div>
             {% endfor %}
         </div>
     {% endif %}
 
-    <main class="flex-grow max-w-7xl mx-auto w-full px-4 py-6 sm:px-6 sm:py-8">
+    <main id="main" tabindex="-1" class="outline-none flex-grow max-w-7xl mx-auto w-full px-4 py-6 sm:px-6 sm:py-8">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="border-t border-slate-200/70 py-5 text-center text-xs text-slate-400">
+    <footer class="border-t border-slate-200/70 py-5 text-center text-xs text-slate-500">
         StudyPlanner · Ứng dụng lập kế hoạch học tập cá nhân có AI gợi ý lịch
     </footer>
 
@@ -193,19 +203,38 @@
 
     <script>
         // Dropdown
+        function closeDropdowns(except) {
+            document.querySelectorAll('[data-dropdown]').forEach((root) => {
+                if (root === except) return;
+                root.querySelector('[data-dropdown-menu]').classList.add('hidden');
+                root.querySelector('[data-dropdown-toggle]').setAttribute('aria-expanded', 'false');
+            });
+        }
         document.querySelectorAll('[data-dropdown]').forEach((root) => {
             const toggle = root.querySelector('[data-dropdown-toggle]');
             const menu = root.querySelector('[data-dropdown-menu]');
             toggle.addEventListener('click', (e) => {
                 e.stopPropagation();
-                document.querySelectorAll('[data-dropdown-menu]').forEach((m) => { if (m !== menu) m.classList.add('hidden'); });
-                menu.classList.toggle('hidden');
+                closeDropdowns(root);
+                const open = menu.classList.toggle('hidden') === false;
+                toggle.setAttribute('aria-expanded', String(open));
             });
         });
         document.addEventListener('click', (e) => {
-            document.querySelectorAll('[data-dropdown-menu]').forEach((m) => {
-                if (!m.contains(e.target)) m.classList.add('hidden');
+            document.querySelectorAll('[data-dropdown]').forEach((root) => {
+                if (!root.contains(e.target)) closeDropdowns();
             });
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            const openRoot = [...document.querySelectorAll('[data-dropdown]')]
+                .find((r) => !r.querySelector('[data-dropdown-menu]').classList.contains('hidden'));
+            closeDropdowns();
+            if (openRoot) openRoot.querySelector('[data-dropdown-toggle]').focus();
+            if (typeof setMobileMenu === 'function' && mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                setMobileMenu(false);
+                menuBtn.focus();
+            }
         });
 
         // Mobile menu
@@ -218,6 +247,8 @@
             menuBackdrop.classList.toggle('hidden', !open);
             menuIcon.classList.toggle('fa-bars', !open);
             menuIcon.classList.toggle('fa-xmark', open);
+            menuBtn.setAttribute('aria-expanded', String(open));
+            menuBtn.setAttribute('aria-label', open ? 'Đóng menu' : 'Mở menu');
             document.body.classList.toggle('overflow-hidden', open);
         }
         if (menuBtn) {
@@ -225,6 +256,29 @@
             menuBackdrop.addEventListener('click', () => setMobileMenu(false));
             window.addEventListener('resize', () => { if (window.innerWidth >= 1024) setMobileMenu(false); });
         }
+
+        // Nút hiện/ẩn mật khẩu cho mọi ô mật khẩu
+        document.querySelectorAll('input[type="password"]').forEach((input) => {
+            const wrap = document.createElement('div');
+            wrap.className = 'relative';
+            input.parentNode.insertBefore(wrap, input);
+            wrap.appendChild(input);
+            input.classList.add('pr-11');
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'absolute inset-y-0 right-1 my-auto grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700';
+            btn.setAttribute('aria-label', 'Hiện mật khẩu');
+            btn.setAttribute('aria-pressed', 'false');
+            btn.innerHTML = '<i class="fa-regular fa-eye" aria-hidden="true"></i>';
+            btn.addEventListener('click', () => {
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                btn.setAttribute('aria-pressed', String(show));
+                btn.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+                btn.innerHTML = `<i class="fa-regular ${show ? 'fa-eye-slash' : 'fa-eye'}" aria-hidden="true"></i>`;
+            });
+            wrap.appendChild(btn);
+        });
 
         // Toasts tự ẩn
         document.querySelectorAll('.toast').forEach((toast, i) => {
