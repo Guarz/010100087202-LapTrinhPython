@@ -194,76 +194,98 @@ Nếu bỏ `--username`, lệnh chọn tài khoản đầu tiên trong cơ sở 
 
 ## ERD và mô hình dữ liệu
 
-ERD dưới đây tập trung vào các thực thể theo yêu cầu demo. `User` là người dùng Django có sẵn; `Event` được biểu diễn bằng `ScheduleBlock` trong ứng dụng.
+ERD dưới đây khớp với `planner/models.py` hiện tại (bản đầy đủ kèm bảng ràng buộc: [docs/erd.md](docs/erd.md), ảnh: [docs/erd.svg](docs/erd.svg)). `User` là người dùng Django có sẵn; `Event` được biểu diễn bằng `ScheduleBlock` trong ứng dụng.
 
 ```mermaid
 erDiagram
-    USER ||--o{ COURSE : owns
-    USER ||--o{ TASK : creates
-    COURSE o|--o{ TASK : contains
-    USER ||--o{ SCHEDULE_BLOCK : owns
-    TASK o|--o{ SCHEDULE_BLOCK : schedules
-    USER ||--o{ RECURRING_SCHEDULE : defines
-    USER ||--o{ POMODORO_LOG : records
-    TASK o|--o{ POMODORO_LOG : focuses
-    USER ||--|| USER_PROFILE : has
+    USER ||--|| USER_PROFILE : "có hồ sơ"
+    USER ||--o{ COURSE : "sở hữu"
+    USER ||--o{ TASK : "tạo"
+    USER ||--o{ RECURRING_SCHEDULE : "khai báo lịch bận"
+    USER ||--o{ SCHEDULE_BLOCK : "sở hữu"
+    USER ||--o{ POMODORO_LOG : "ghi phiên"
+    COURSE |o--o{ TASK : "gồm (SET NULL)"
+    TASK |o--o{ SCHEDULE_BLOCK : "được xếp lịch (SET NULL)"
+    TASK |o--o{ POMODORO_LOG : "được tập trung (SET NULL)"
+    POMODORO_LOG |o--o{ POMODORO_LOG : "tiếp tục từ (resumed_from)"
 
     USER {
         int id PK
-        string username
-        string email
+        varchar username UK
+        varchar email
+        varchar password "hash"
+        bool is_staff
+        datetime date_joined
     }
-    COURSE {
-        int id PK
-        int user_id FK
-        string code
-        string name
-        string description
-    }
-    TASK {
-        int id PK
-        int user_id FK
-        int course_id FK
-        string title
-        string subject_name
-        datetime deadline
-        int estimated_minutes
-        int priority
-        string status
-    }
-    SCHEDULE_BLOCK {
-        int id PK
-        int user_id FK
-        int task_id FK
-        string title
-        datetime start_time
-        datetime end_time
-        string status
-    }
-    RECURRING_SCHEDULE {
-        int id PK
-        int user_id FK
-        string title
-        int day_of_week
-        time start_time
-        time end_time
-        string category
-    }
-    POMODORO_LOG {
-        int id PK
-        int user_id FK
-        int task_id FK
-        int duration_minutes
-        int actual_seconds
-        int remaining_seconds
-        string status
-        uuid session_uuid
-    }
+
     USER_PROFILE {
         int id PK
-        int user_id FK
-        string preferred_study_hours
-        string sleep_hours
+        int user_id FK, UK "OneToOne -> USER, CASCADE"
+        varchar preferred_study_hours "mặc định 19:00-22:00"
+        varchar sleep_hours "mặc định 23:00-06:00"
+        uuid calendar_token UK "link đăng ký lịch .ics"
+    }
+
+    COURSE {
+        int id PK
+        int user_id FK "CASCADE"
+        varchar code "UNIQUE (user_id, code)"
+        varchar name
+        text description
+        datetime created_at
+    }
+
+    TASK {
+        int id PK
+        int user_id FK "CASCADE"
+        int course_id FK "nullable, SET NULL"
+        varchar title
+        varchar subject_name "nullable"
+        datetime deadline
+        int estimated_minutes
+        int priority "1 Cao, 2 TB, 3 Thấp"
+        varchar status "todo, in_progress, completed"
+        varchar material_url "nullable"
+        varchar material_file "pdf/doc/ppt/txt, <= 10MB"
+        datetime reminder_sent_for "nullable, chống gửi nhắc trùng"
+        datetime created_at
+    }
+
+    RECURRING_SCHEDULE {
+        int id PK
+        int user_id FK "CASCADE"
+        varchar title
+        int day_of_week "0 Thứ Hai ... 6 Chủ Nhật"
+        time start_time
+        time end_time
+        varchar category "mặc định school"
+    }
+
+    SCHEDULE_BLOCK {
+        int id PK
+        int user_id FK "CASCADE"
+        int task_id FK "nullable, SET NULL"
+        varchar title
+        datetime start_time
+        datetime end_time
+        bool is_fixed "lịch cố định / nhập .ics"
+        varchar status "suggested, confirmed, completed"
+    }
+
+    POMODORO_LOG {
+        int id PK
+        int user_id FK "CASCADE"
+        int task_id FK "nullable, SET NULL"
+        int resumed_from_id FK "nullable, self, SET NULL"
+        uuid session_uuid UK "nullable, chống lưu trùng"
+        datetime start_time
+        datetime ended_at "nullable"
+        int duration_minutes "mặc định 25"
+        bool completed "tương thích dữ liệu cũ"
+        varchar status "completed, deferred, nullable"
+        int actual_seconds "nullable"
+        int remaining_seconds "nullable"
+        varchar quick_goal_title "mục tiêu nhanh khi task rỗng"
     }
 ```
 
