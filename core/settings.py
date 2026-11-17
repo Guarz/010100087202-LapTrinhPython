@@ -89,6 +89,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'planner.context_processors.upcoming_deadlines',
+                'planner.context_processors.theme',
             ],
         },
     },
@@ -215,6 +216,12 @@ CELERY_BROKER_URL = REDIS_URL or 'memory://'
 CELERY_RESULT_BACKEND = REDIS_URL or None
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_ALWAYS_EAGER = not REDIS_URL
+
+# Test không phụ thuộc Redis (VD .env đang chứa URL nội bộ của Render)
+if len(sys.argv) > 1 and sys.argv[1] == 'test':
+    CELERY_BROKER_URL = 'memory://'
+    CELERY_RESULT_BACKEND = None
+    CELERY_TASK_ALWAYS_EAGER = True
 CELERY_BEAT_SCHEDULE = {
     'deadline-reminders-every-15-minutes': {
         'task': 'planner.tasks.send_deadline_reminders_task',

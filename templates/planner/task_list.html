@@ -17,7 +17,7 @@
             <a href="#new-task" class="btn-primary"><i class="fa-solid fa-plus"></i>Thêm nhiệm vụ</a>
             <form method="POST" action="{% url 'trigger_auto_schedule' %}">
                 {% csrf_token %}
-                <button type="submit" class="btn-secondary"><i class="fa-solid fa-wand-magic-sparkles text-violet-500"></i>Lập lịch tuần</button>
+                <button type="submit" class="btn-secondary"><i class="fa-solid fa-wand-magic-sparkles text-accent-600"></i>Lập lịch tuần</button>
             </form>
         </div>
     </div>
@@ -170,7 +170,7 @@
                     <ol class="relative space-y-3 border-l-2 border-slate-100 pl-4">
                         {% for block in today_blocks %}
                             <li class="relative">
-                                <span class="absolute -left-[23px] top-1.5 h-3 w-3 rounded-full ring-4 ring-white {% if block.is_fixed %}bg-slate-400{% elif block.status == 'suggested' %}bg-violet-500{% else %}bg-brand-600{% endif %}"></span>
+                                <span class="absolute -left-[23px] top-1.5 h-3 w-3 rounded-full ring-4 ring-white {% if block.is_fixed %}bg-slate-400{% elif block.status == 'suggested' %}bg-brand-200{% else %}bg-brand-600{% endif %}"></span>
                                 <p class="text-xs font-semibold text-slate-500">{{ block.start_time|time:"H:i" }} – {{ block.end_time|time:"H:i" }}</p>
                                 <p class="text-sm font-medium text-slate-800">{{ block.title }}</p>
                             </li>

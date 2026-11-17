@@ -4,7 +4,8 @@ from datetime import timedelta
 from django.conf import settings
 from django.utils import timezone
 
-from .models import Task
+from .models import Task, UserProfile
+from .themes import DEFAULT_THEME, THEMES, theme_css_variables
 
 
 def upcoming_deadlines(request):
@@ -27,3 +28,14 @@ def upcoming_deadlines(request):
         'reminder_count': len(upcoming) + overdue_count,
         'reminder_hours': settings.REMINDER_HOURS_BEFORE,
     }
+
+
+def theme(request):
+    """Bộ màu người dùng đã chọn (lưu trong UserProfile.theme)."""
+    key = DEFAULT_THEME
+    user = getattr(request, 'user', None)
+    if user and user.is_authenticated:
+        key = UserProfile.objects.filter(user=user).values_list('theme', flat=True).first() or DEFAULT_THEME
+    if key not in THEMES:
+        key = DEFAULT_THEME
+    return {'theme_key': key, 'theme_css': theme_css_variables(key)}

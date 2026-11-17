@@ -96,6 +96,37 @@
         </section>
     </div>
 
+    <section class="card card-pad" id="theme">
+        <h2 class="section-title"><i class="fa-solid fa-palette text-brand-500" aria-hidden="true"></i>Bộ màu giao diện</h2>
+        <p class="mt-1 text-sm text-slate-500">Chọn bộ màu bạn thích. Lựa chọn được lưu trong tài khoản và áp dụng trên mọi trang, kể cả Pomodoro và Lịch.</p>
+        <form method="POST" class="mt-4">
+            {% csrf_token %}
+            <input type="hidden" name="form" value="theme">
+            <fieldset>
+                <legend class="sr-only">Chọn bộ màu</legend>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    {% for option in theme_options %}
+                        <label class="group relative flex cursor-pointer flex-col gap-3 rounded-2xl border-2 border-slate-200 bg-white p-3 transition hover:border-slate-300 has-[:checked]:border-[var(--sel)] has-[:checked]:shadow-soft has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500 has-[:focus-visible]:ring-offset-2" style="--sel: {{ option.primary }}">
+                            <input type="radio" name="theme" value="{{ option.key }}" class="sr-only" {% if option.key == theme_key %}checked{% endif %}>
+                            <span class="h-14 rounded-xl" style="background: {{ option.gradient }}" aria-hidden="true"></span>
+                            <span class="flex gap-1.5" aria-hidden="true">
+                                {% for color in option.swatches %}<span class="h-4 w-4 rounded-full ring-1 ring-black/5" style="background: {{ color }}"></span>{% endfor %}
+                            </span>
+                            <span>
+                                <span class="flex items-center justify-between gap-2 text-sm font-bold text-slate-900">
+                                    {{ option.label }}
+                                    {% if option.key == theme_key %}<span class="badge bg-slate-900 text-white">Đang dùng</span>{% endif %}
+                                </span>
+                                <span class="mt-0.5 block text-xs text-slate-500">{{ option.description }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+            <button type="submit" class="btn-primary mt-4"><i class="fa-solid fa-check" aria-hidden="true"></i>Áp dụng bộ màu</button>
+        </form>
+    </section>
+
     <section class="card card-pad">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div class="max-w-2xl">

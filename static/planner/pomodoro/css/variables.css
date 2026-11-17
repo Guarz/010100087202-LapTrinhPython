@@ -108,7 +108,7 @@
        04. BRAND COLORS
        ===================================================== */
 
-    --pm-primary: #4F46E5;
+    --pm-primary: rgb(var(--brand-600));
     --pm-cream: #F8FAFC;
 
 
@@ -116,10 +116,10 @@
        05. AARHUSIAN SKY - SHADES
        ===================================================== */
 
-    --pm-blue-90: #4840D6;
-    --pm-blue-80: #4338CA;
-    --pm-blue-70: #3730A3;
-    --pm-blue-60: #312E81;
+    --pm-blue-90: rgb(var(--brand-600));
+    --pm-blue-80: rgb(var(--brand-700));
+    --pm-blue-70: rgb(var(--brand-800));
+    --pm-blue-60: rgb(var(--brand-900));
     --pm-blue-50: #29266B;
     --pm-blue-40: #211F56;
     --pm-blue-30: #191741;
@@ -131,15 +131,15 @@
        06. AARHUSIAN SKY - TINTS
        ===================================================== */
 
-    --pm-blue-t10: #6366F1;
-    --pm-blue-t20: #7376F3;
-    --pm-blue-t30: #818CF8;
-    --pm-blue-t40: #939CF9;
-    --pm-blue-t50: #A5B4FC;
-    --pm-blue-t60: #B8C3FD;
-    --pm-blue-t70: #C7D2FE;
-    --pm-blue-t80: #E0E7FF;
-    --pm-blue-t90: #EEF2FF;
+    --pm-blue-t10: rgb(var(--brand-500));
+    --pm-blue-t20: rgb(var(--brand-500));
+    --pm-blue-t30: rgb(var(--brand-400));
+    --pm-blue-t40: rgb(var(--brand-400));
+    --pm-blue-t50: rgb(var(--brand-300));
+    --pm-blue-t60: rgb(var(--brand-300));
+    --pm-blue-t70: rgb(var(--brand-200));
+    --pm-blue-t80: rgb(var(--brand-100));
+    --pm-blue-t90: rgb(var(--brand-50));
 
 
     /* =====================================================

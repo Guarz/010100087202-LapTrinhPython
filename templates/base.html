@@ -1,7 +1,7 @@
 <!-- templates/base.html -->
 {% load static planner_extras %}
 <!DOCTYPE html>
-<html lang="vi" class="[scrollbar-gutter:stable]">
+<html lang="vi" data-theme="{{ theme_key }}" class="[scrollbar-gutter:stable]">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,19 +17,21 @@
                 extend: {
                     fontFamily: { sans: ['"Be Vietnam Pro"', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
                     colors: {
-                        brand: {
-                            50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8',
-                            500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81'
-                        }
+                        // Màu theo theme đang chọn: biến CSS do planner/themes.py sinh ra
+                        brand: Object.fromEntries([50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
+                            .map((s) => [s, `rgb(var(--brand-${s}) / <alpha-value>)`])),
+                        accent: Object.fromEntries([100, 500, 600, 700, 800]
+                            .map((s) => [s, `rgb(var(--accent-${s}) / <alpha-value>)`]))
                     },
                     boxShadow: {
                         soft: '0 1px 2px rgba(15,23,42,.04), 0 4px 16px -4px rgba(15,23,42,.08)',
-                        lift: '0 10px 30px -10px rgba(79,70,229,.35)'
+                        lift: '0 10px 30px -10px rgb(var(--brand-600) / .35)'
                     }
                 }
             }
         }
     </script>
+    <style>:root { {{ theme_css }} }</style>
     <style type="text/tailwindcss">
         @layer components {
             .card { @apply bg-white rounded-2xl border border-slate-200/70 shadow-soft; }
@@ -44,7 +46,7 @@
             .field[type="file"] { @apply p-2 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-700 hover:file:bg-brand-100; }
             .label { @apply block text-xs font-semibold text-slate-600 mb-1.5; }
             .badge { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold; }
-            .nav-link { @apply flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900; }
+            .nav-link { @apply flex items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900; }
             .nav-link.active { @apply bg-brand-50 text-brand-700; }
             .page-title { @apply text-2xl sm:text-[28px] font-extrabold tracking-tight text-slate-900; }
             .page-sub { @apply text-sm text-slate-500 mt-1; }
@@ -63,14 +65,14 @@
     {% block extra_css %}{% endblock %}
 </head>
 {% with url_name=request.resolver_match.url_name %}
-<body class="min-h-screen bg-slate-50 text-slate-800 flex flex-col antialiased bg-[radial-gradient(1200px_500px_at_10%_-10%,#e0e7ff_0%,transparent_60%),radial-gradient(900px_400px_at_100%_0%,#f5f3ff_0%,transparent_55%)]">
+<body class="min-h-screen bg-slate-50 text-slate-800 flex flex-col antialiased bg-[radial-gradient(1200px_500px_at_10%_-10%,rgb(var(--brand-100))_0%,transparent_60%),radial-gradient(900px_400px_at_100%_0%,rgb(var(--accent-100))_0%,transparent_55%)]">
     <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-[70] focus:rounded-xl focus:bg-white focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-brand-700 focus:shadow-lift">Bỏ qua đến nội dung chính</a>
 
     <nav class="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur-xl">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex h-16 items-center justify-between gap-4">
                 <a href="{% url 'task_list' %}" class="flex items-center gap-2.5 shrink-0 rounded-xl" aria-label="StudyPlanner - Trang tổng quan">
-                    <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-lift">
+                    <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-600 text-white shadow-lift">
                         <i class="fa-solid fa-graduation-cap"></i>
                     </span>
                     <span class="leading-tight">
@@ -80,7 +82,7 @@
                 </a>
 
                 {% if user.is_authenticated %}
-                <div class="hidden lg:flex items-center gap-1" role="navigation" aria-label="Điều hướng chính">
+                <div class="hidden xl:flex items-center gap-1" role="navigation" aria-label="Điều hướng chính">
                     <a href="{% url 'task_list' %}" class="nav-link {% if url_name == 'task_list' or url_name == 'edit_task' %}active{% endif %}"><i class="fa-solid fa-table-columns w-4 text-center"></i>Tổng quan</a>
                     <a href="{% url 'calendar_view' %}" class="nav-link {% if 'calendar' in url_name or 'schedule_block' in url_name %}active{% endif %}"><i class="fa-regular fa-calendar w-4 text-center"></i>Lịch</a>
                     <a href="{% url 'recurring_list' %}" class="nav-link {% if url_name == 'recurring_list' %}active{% endif %}"><i class="fa-solid fa-business-time w-4 text-center"></i>Lịch bận</a>
@@ -139,6 +141,7 @@
                                     <p class="text-xs text-slate-500">{% if user.is_staff %}Quản trị viên{% else %}Sinh viên{% endif %}</p>
                                 </div>
                                 <a href="{% url 'profile' %}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"><i class="fa-regular fa-id-card w-4" aria-hidden="true"></i>Hồ sơ & mật khẩu</a>
+                                <a href="{% url 'profile' %}#theme" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"><i class="fa-solid fa-palette w-4" aria-hidden="true"></i>Đổi bộ màu</a>
                                 <a href="{% url 'recurring_list' %}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"><i class="fa-regular fa-moon w-4" aria-hidden="true"></i>Khung giờ ngủ / học</a>
                                 {% if user.is_staff %}
                                     <a href="{% url 'user_admin_list' %}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-violet-700 hover:bg-violet-50"><i class="fa-solid fa-users-gear w-4" aria-hidden="true"></i>Quản lý người dùng</a>
@@ -150,7 +153,7 @@
                             </div>
                         </div>
 
-                        <button id="mobile-menu-btn" type="button" class="lg:hidden grid h-10 w-10 place-items-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="Mở menu" aria-expanded="false" aria-controls="mobile-menu">
+                        <button id="mobile-menu-btn" type="button" class="xl:hidden grid h-10 w-10 place-items-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="Mở menu" aria-expanded="false" aria-controls="mobile-menu">
                             <i id="menu-icon" class="fa-solid fa-bars text-lg"></i>
                         </button>
                     {% else %}
@@ -162,7 +165,7 @@
         </div>
 
         {% if user.is_authenticated %}
-        <div id="mobile-menu" role="navigation" aria-label="Điều hướng chính" class="hidden lg:hidden absolute inset-x-0 top-16 border-b border-slate-200 bg-white px-4 pb-5 pt-3 shadow-2xl">
+        <div id="mobile-menu" role="navigation" aria-label="Điều hướng chính" class="hidden xl:hidden absolute inset-x-0 top-16 border-b border-slate-200 bg-white px-4 pb-5 pt-3 shadow-2xl">
             <div class="grid grid-cols-2 gap-2">
                 <a href="{% url 'task_list' %}" class="nav-link {% if url_name == 'task_list' %}active{% endif %}"><i class="fa-solid fa-table-columns w-4"></i>Tổng quan</a>
                 <a href="{% url 'calendar_view' %}" class="nav-link {% if 'calendar' in url_name %}active{% endif %}"><i class="fa-regular fa-calendar w-4"></i>Lịch</a>
@@ -185,7 +188,7 @@
         </div>
         {% endif %}
     </nav>
-    <div id="menu-backdrop" class="hidden lg:hidden fixed inset-0 top-16 z-40 bg-slate-900/40 backdrop-blur-sm"></div>
+    <div id="menu-backdrop" class="hidden xl:hidden fixed inset-0 top-16 z-40 bg-slate-900/40 backdrop-blur-sm"></div>
 
     <!-- Thông báo (Django messages) -->
     {% if messages %}
@@ -269,7 +272,7 @@
         if (menuBtn) {
             menuBtn.addEventListener('click', () => setMobileMenu(mobileMenu.classList.contains('hidden')));
             menuBackdrop.addEventListener('click', () => setMobileMenu(false));
-            window.addEventListener('resize', () => { if (window.innerWidth >= 1024) setMobileMenu(false); });
+            window.addEventListener('resize', () => { if (window.innerWidth >= 1280) setMobileMenu(false); });
         }
 
         // Nút hiện/ẩn mật khẩu cho mọi ô mật khẩu

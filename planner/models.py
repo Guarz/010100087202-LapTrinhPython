@@ -31,6 +31,8 @@ def validate_study_material_size(uploaded_file):
 # GIỮ NGUYÊN - KHÔNG THUỘC PHẠM VI POMODORO
 # ============================================================
 
+from .themes import THEME_CHOICES  # noqa: E402
+
 INVITE_STATE_FIELDS = ('invite_sequence', 'invite_hash')
 
 
@@ -87,6 +89,9 @@ class UserProfile(models.Model):
     # Gửi lời mời lịch (iCalendar) qua email khi tạo/sửa/xóa deadline
     # và phiên học đã xác nhận.
     calendar_invites_enabled = models.BooleanField(default=False)
+
+    # Bộ màu giao diện (planner/themes.py)
+    theme = models.CharField(max_length=20, default='indigo', choices=THEME_CHOICES)
 
     def __str__(self):
         return f"Hồ sơ của {self.user.username}"

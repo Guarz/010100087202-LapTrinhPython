@@ -1394,3 +1394,41 @@ class CronReminderEndpointTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('Sent: 1', response.json()['result'])
+
+
+class ThemeTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('mau', password='pass12345')
+        self.client.force_login(self.user)
+
+    def test_all_themes_meet_wcag_aa_for_buttons_and_links(self):
+        from .themes import THEMES, contrast_ratio
+        for key, theme in THEMES.items():
+            with self.subTest(theme=key):
+                self.assertGreaterEqual(contrast_ratio('#ffffff', theme['brand'][600]), 4.5)
+                self.assertGreaterEqual(contrast_ratio(theme['brand'][700], theme['brand'][50]), 4.5)
+                self.assertGreaterEqual(contrast_ratio('#ffffff', theme['accent'][700]), 4.5)
+
+    def test_default_theme_css_is_rendered(self):
+        response = self.client.get('/profile/')
+        self.assertContains(response, 'data-theme="indigo"')
+        self.assertContains(response, '--brand-600: 79 70 229;')
+
+    def test_choose_theme_saves_and_changes_css(self):
+        response = self.client.post('/profile/', {'form': 'theme', 'theme': 'teal'}, follow=True)
+        self.assertContains(response, 'Xanh ngọc')
+        self.assertContains(response, 'data-theme="teal"')
+        self.assertContains(response, '--brand-600: 15 118 110;')
+        self.assertEqual(UserProfile.objects.get(user=self.user).theme, 'teal')
+
+    def test_invalid_theme_is_rejected(self):
+        self.client.post('/profile/', {'form': 'theme', 'theme': 'hack"><script>'})
+        self.assertEqual(UserProfile.objects.get_or_create(user=self.user)[0].theme, 'indigo')
+
+    def test_calendar_events_use_theme_colors(self):
+        UserProfile.objects.update_or_create(user=self.user, defaults={'theme': 'orange'})
+        start = timezone.now() + timedelta(days=1)
+        ScheduleBlock.objects.create(user=self.user, title='Học', start_time=start,
+                                     end_time=start + timedelta(hours=1), status='confirmed')
+        events = self.client.get('/api/calendar-events/').json()
+        self.assertIn('#c2410c', [e.get('backgroundColor') for e in events])

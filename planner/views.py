@@ -341,6 +341,8 @@ def export_calendar_ics(request):
 def calendar_events_api(request):
 
     user = request.user
+    from .themes import get_theme
+    theme = get_theme(UserProfile.objects.filter(user=user).values_list('theme', flat=True).first())
 
     events = []
 
@@ -400,11 +402,14 @@ def calendar_events_api(request):
 
             'end': block.end_time.isoformat(),
 
+            # Gợi ý chưa chốt: nền nhạt chữ đậm; đã xác nhận: màu theme đậm
             'backgroundColor': (
                 '#64748b'
                 if block.is_fixed
-                else ('#8b5cf6' if block.status == 'suggested' else '#4f46e5')
+                else (theme['brand'][100] if block.status == 'suggested' else theme['brand'][600])
             ),
+
+            'textColor': theme['brand'][800] if block.status == 'suggested' and not block.is_fixed else '#ffffff',
 
             'borderColor': 'transparent',
 
@@ -1287,6 +1292,15 @@ def profile_view(request):
         elif request.POST.get('form') == 'invites':
             _toggle_calendar_invites(request, user, request.POST.get('enabled') == '1')
             return redirect('profile')
+        elif request.POST.get('form') == 'theme':
+            from .themes import THEMES
+            key = request.POST.get('theme', '')
+            if key in THEMES:
+                UserProfile.objects.update_or_create(user=user, defaults={'theme': key})
+                messages.success(request, f'Đã đổi giao diện sang bộ màu "{THEMES[key]["label"]}".')
+            else:
+                messages.error(request, 'Bộ màu không hợp lệ.')
+            return redirect('profile')
         else:
             old_email = user.email
             profile_form = ProfileForm(request.POST, instance=user)
@@ -1318,10 +1332,26 @@ def profile_view(request):
     return render(request, 'planner/profile.html', {
         'pending_email': profile.pending_email,
         'profile': profile,
+        'theme_options': _theme_options(),
         'profile_form': profile_form,
         'password_form': password_form,
         'stats': stats,
     })
+
+
+def _theme_options():
+    from .themes import THEMES
+    return [
+        {
+            'key': key,
+            'label': theme['label'],
+            'description': theme['description'],
+            'swatches': [theme['brand'][100], theme['brand'][400], theme['brand'][600], theme['accent'][600]],
+            'primary': theme['brand'][600],
+            'gradient': f"linear-gradient(135deg, {theme['brand'][600]}, {theme['accent'][700]})",
+        }
+        for key, theme in THEMES.items()
+    ]
 
 
 def _toggle_calendar_invites(request, user, enabled):

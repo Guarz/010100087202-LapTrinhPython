@@ -55,7 +55,7 @@
         <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 px-1 text-xs font-medium text-slate-500">
             <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-rose-500"></span>Deadline ưu tiên cao</span>
             <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>Deadline khác</span>
-            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-violet-500"></span>AI gợi ý</span>
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-brand-100 ring-1 ring-brand-600"></span>AI gợi ý</span>
             <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-brand-600"></span>Đã xác nhận</span>
             <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-slate-500"></span>Lịch cố định</span>
         </div>
@@ -103,7 +103,8 @@
             eventContent: function(arg) {
                 const iconClass = arg.event.extendedProps.icon || 'fa-solid fa-calendar';
                 const container = document.createElement('div');
-                container.className = 'flex items-center gap-1.5 px-1 py-0.5 truncate text-white leading-tight';
+                container.className = 'flex items-center gap-1.5 px-1 py-0.5 truncate leading-tight';
+                container.style.color = arg.event.textColor || '#ffffff';
                 const icon = document.createElement('i');
                 icon.className = `${iconClass} text-[10px] opacity-90`;
                 const title = document.createElement('span');
@@ -171,12 +172,12 @@
 </script>
 
 <style>
-    .fc { font-family: inherit; font-size: .82rem; --fc-border-color: #eef2f7; --fc-today-bg-color: #eef2ff; --fc-now-indicator-color: #f43f5e; }
+    .fc { font-family: inherit; font-size: .82rem; --fc-border-color: #eef2f7; --fc-today-bg-color: rgb(var(--brand-50)); --fc-now-indicator-color: #f43f5e; }
     .fc .fc-toolbar { flex-wrap: wrap; gap: 8px; }
     .fc .fc-toolbar-title { font-size: 1.05rem; font-weight: 800; color: #0f172a; }
     .fc .fc-button { background: #fff; border: 1px solid #e2e8f0; color: #334155; font-weight: 600; font-size: .78rem; padding: 6px 12px; border-radius: 10px; box-shadow: none; text-transform: none; }
     .fc .fc-button:hover { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
-    .fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    .fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active { background: rgb(var(--brand-600)); border-color: rgb(var(--brand-600)); color: #fff; }
     .fc .fc-button-group > .fc-button { border-radius: 0; }
     .fc .fc-button-group > .fc-button:first-child { border-radius: 10px 0 0 10px; }
     .fc .fc-button-group > .fc-button:last-child { border-radius: 0 10px 10px 0; }
