@@ -2,7 +2,13 @@
 from django import forms
 from .models import Course, RecurringSchedule, ScheduleBlock, Task, UserProfile
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import (
+    AuthenticationForm,
+    PasswordChangeForm,
+    PasswordResetForm,
+    SetPasswordForm,
+)
+from django.contrib.auth.password_validation import validate_password
 
 class TaskForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
@@ -140,28 +146,77 @@ class RecurringScheduleForm(forms.ModelForm):
                 attrs={'class': 'field'}
             ),
         }
-class RegisterForm(UserCreationForm):
-    email = forms.EmailField(
-        required=True,
-        widget=forms.EmailInput(attrs={'class': 'field', 'placeholder': 'sinhvien@gmail.com'})
+class RegisterForm(forms.ModelForm):
+    """Đăng ký với 3 trường: email, tên đăng nhập, mật khẩu.
+
+    Một email được dùng cho nhiều tài khoản; tên đăng nhập là duy nhất
+    và không đổi được sau khi tạo.
+    """
+    password = forms.CharField(
+        label='Mật khẩu',
+        strip=False,
+        widget=forms.PasswordInput(attrs={'class': 'field', 'autocomplete': 'new-password'}),
+        help_text='Ít nhất 8 ký tự, không quá giống tên đăng nhập, không chỉ gồm số.',
     )
 
     class Meta:
         model = User
-        fields = ['username', 'email']
+        fields = ['email', 'username']
         labels = {
+            'email': 'Email',
             'username': 'Tên đăng nhập',
-            'email': 'Địa chỉ Email',
+        }
+        help_texts = {
+            'username': 'Dùng để đăng nhập, không thể đổi sau này. Chỉ gồm chữ, số và @ . + - _',
         }
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'field', 'placeholder': 'nhap_ten_dang_nhap'}),
+            'email': forms.EmailInput(attrs={'class': 'field', 'placeholder': 'sinhvien@gmail.com', 'autocomplete': 'email'}),
+            'username': forms.TextInput(attrs={'class': 'field', 'placeholder': 'nhap_ten_dang_nhap', 'autocomplete': 'username', 'autocapitalize': 'none'}),
+        }
+        error_messages = {
+            'username': {'unique': 'Tên đăng nhập này đã có người dùng.'},
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Style cho 2 ô mật khẩu mặc định của Django
-        self.fields['password1'].widget.attrs.update({'class': 'field'})
-        self.fields['password2'].widget.attrs.update({'class': 'field'})
+        self.fields['email'].required = True
+
+    def clean_email(self):
+        return self.cleaned_data['email'].strip().lower()
+
+    def _post_clean(self):
+        super()._post_clean()
+        # Kiểm tra độ mạnh mật khẩu với thông tin của chính tài khoản đang tạo
+        password = self.cleaned_data.get('password')
+        if password:
+            try:
+                validate_password(password, self.instance)
+            except forms.ValidationError as error:
+                self.add_error('password', error)
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data['password'])
+        if commit:
+            user.save()
+        return user
+
+
+class LoginForm(AuthenticationForm):
+    """Đăng nhập bằng tên đăng nhập + mật khẩu; chặn tài khoản chưa xác thực email."""
+
+    error_messages = {
+        'invalid_login': 'Tên đăng nhập hoặc mật khẩu không chính xác.',
+        'inactive': 'Tài khoản này đã bị khóa.',
+        'unverified': 'Bạn cần xác thực email trước khi đăng nhập. Hãy mở link trong email chúng tôi đã gửi.',
+    }
+
+    def confirm_login_allowed(self, user):
+        super().confirm_login_allowed(user)
+        from .accounts import is_email_verified
+        if not is_email_verified(user):
+            raise forms.ValidationError(self.error_messages['unverified'], code='unverified')
+
 
 class CourseForm(forms.ModelForm):
     class Meta:
@@ -234,3 +289,62 @@ class IcsImportForm(forms.Form):
         if uploaded.size > 2 * 1024 * 1024:
             raise forms.ValidationError('Tệp .ics không được vượt quá 2 MB.')
         return uploaded
+
+
+class ProfileForm(forms.ModelForm):
+    """Người dùng tự cập nhật thông tin cá nhân."""
+
+    class Meta:
+        model = User
+        fields = ['last_name', 'first_name', 'email']
+        labels = {
+            'last_name': 'Họ',
+            'first_name': 'Tên',
+            'email': 'Email',
+        }
+        widgets = {
+            'last_name': forms.TextInput(attrs={'class': 'field', 'autocomplete': 'family-name'}),
+            'first_name': forms.TextInput(attrs={'class': 'field', 'autocomplete': 'given-name'}),
+            'email': forms.EmailInput(attrs={'class': 'field', 'autocomplete': 'email'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['email'].required = True
+
+    def clean_email(self):
+        # Một email có thể dùng cho nhiều tài khoản nên không kiểm tra trùng
+        return self.cleaned_data['email'].strip().lower()
+
+
+class StyledPasswordChangeForm(PasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        labels = {
+            'old_password': 'Mật khẩu hiện tại',
+            'new_password1': 'Mật khẩu mới',
+            'new_password2': 'Nhập lại mật khẩu mới',
+        }
+        for name, field in self.fields.items():
+            field.label = labels[name]
+            field.widget.attrs.update({'class': 'field'})
+        self.fields['old_password'].widget.attrs.pop('autofocus', None)
+
+
+class StyledPasswordResetForm(PasswordResetForm):
+    """Gửi link đặt lại mật khẩu cho MỌI tài khoản đang dùng email này."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['email'].label = 'Email đã đăng ký'
+        self.fields['email'].widget.attrs.update({'class': 'field', 'placeholder': 'sinhvien@gmail.com'})
+
+
+class StyledSetPasswordForm(SetPasswordForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['new_password1'].label = 'Mật khẩu mới'
+        self.fields['new_password2'].label = 'Nhập lại mật khẩu mới'
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': 'field'})
+        self.fields['new_password1'].help_text = 'Ít nhất 8 ký tự, không quá giống tên đăng nhập, không chỉ gồm số.'

@@ -56,6 +56,11 @@ class Command(BaseCommand):
             default='demo12345',
             help='Password used together with --create-user (default: demo12345).',
         )
+        parser.add_argument(
+            '--staff',
+            action='store_true',
+            help='Give the user the administrator role (is_staff) to manage users.',
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -76,6 +81,11 @@ class Command(BaseCommand):
             raise CommandError(
                 'No user exists. Register an account first or create one with createsuperuser.'
             )
+
+        if options['staff'] and not user.is_staff:
+            user.is_staff = True
+            user.save(update_fields=['is_staff'])
+            self.stdout.write(f'Granted administrator role to "{user.username}".')
 
         UserProfile.objects.get_or_create(user=user)
 

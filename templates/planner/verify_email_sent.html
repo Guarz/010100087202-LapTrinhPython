@@ -1,0 +1,32 @@
+<!-- templates/planner/verify_email_sent.html -->
+{% extends 'planner/_auth_layout.html' %}
+
+{% block title %}Xác thực email - StudyPlanner{% endblock %}
+
+{% block auth_form %}
+<div class="mx-auto max-w-sm space-y-6 text-center">
+    <span class="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-2xl text-brand-600"><i class="fa-regular fa-envelope-open" aria-hidden="true"></i></span>
+    <div>
+        <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Kiểm tra hộp thư của bạn</h1>
+        <p class="mt-2 text-sm text-slate-500">
+            Chúng tôi đã gửi link xác thực cho tài khoản <b class="text-slate-800">{{ pending_user.username }}</b>
+            tới <b class="text-slate-800">{{ masked_email }}</b>. Bấm link trong email để kích hoạt tài khoản.
+        </p>
+    </div>
+
+    <ul class="space-y-2 rounded-xl bg-slate-50 p-4 text-left text-sm text-slate-600">
+        <li><i class="fa-solid fa-circle-info mr-1.5 text-brand-500" aria-hidden="true"></i>Không thấy email? Hãy xem thư mục <b>Spam</b> hoặc <b>Quảng cáo</b>.</li>
+        <li><i class="fa-regular fa-clock mr-1.5 text-brand-500" aria-hidden="true"></i>Link có hiệu lực trong 3 ngày.</li>
+    </ul>
+
+    <form method="POST" action="{% url 'resend_verification_email' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-secondary w-full py-3"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i>Gửi lại email</button>
+    </form>
+
+    <p class="text-sm text-slate-500">
+        Đã xác thực xong?
+        <a href="{% url 'login' %}?username={{ pending_user.username|urlencode }}" class="font-semibold text-brand-600 hover:underline">Đăng nhập</a>
+    </p>
+</div>
+{% endblock %}

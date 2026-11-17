@@ -1,0 +1,13 @@
+{% autoescape off %}Xin chào {{ user.username }},
+
+{% if is_email_change %}Bạn vừa yêu cầu đổi email của tài khoản StudyPlanner "{{ user.username }}" sang địa chỉ này.
+Mở link dưới đây để xác nhận:{% else %}Cảm ơn bạn đã đăng ký StudyPlanner với tên đăng nhập "{{ user.username }}".
+Mở link dưới đây để xác thực email và kích hoạt tài khoản:{% endif %}
+
+{{ verify_url }}
+
+Link có hiệu lực trong {{ valid_days }} ngày.
+Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.
+
+StudyPlanner - Ứng dụng lập kế hoạch học tập có AI gợi ý lịch
+{% endautoescape %}

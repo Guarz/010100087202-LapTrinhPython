@@ -1,0 +1,146 @@
+<!-- templates/planner/user_admin_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Quản lý người dùng - StudyPlanner{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <p class="text-sm font-medium text-violet-600"><i class="fa-solid fa-shield-halved mr-1" aria-hidden="true"></i>Dành cho quản trị viên</p>
+            <h1 class="page-title">Quản lý người dùng</h1>
+            <p class="page-sub">Xem tài khoản, khóa/mở khóa và phân vai trò Quản trị viên / Sinh viên.</p>
+        </div>
+        {% if user.is_superuser %}
+            <a href="{% url 'admin:auth_user_changelist' %}" class="btn-secondary"><i class="fa-solid fa-gear" aria-hidden="true"></i>Trang quản trị Django</a>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <div class="card p-4 sm:p-5">
+            <p class="text-xs font-semibold text-slate-500">Tổng tài khoản</p>
+            <p class="mt-1 text-2xl font-extrabold text-slate-900">{{ stats.total }}</p>
+        </div>
+        <div class="card p-4 sm:p-5">
+            <p class="text-xs font-semibold text-slate-500">Quản trị viên</p>
+            <p class="mt-1 text-2xl font-extrabold text-violet-600">{{ stats.admins }}</p>
+        </div>
+        <div class="card p-4 sm:p-5">
+            <p class="text-xs font-semibold text-slate-500">Đang bị khóa</p>
+            <p class="mt-1 text-2xl font-extrabold {% if stats.locked %}text-rose-600{% else %}text-slate-900{% endif %}">{{ stats.locked }}</p>
+        </div>
+        <div class="card p-4 sm:p-5">
+            <p class="text-xs font-semibold text-slate-500">Mới trong 7 ngày</p>
+            <p class="mt-1 text-2xl font-extrabold text-slate-900">{{ stats.new }}</p>
+        </div>
+    </div>
+
+    <section class="card overflow-hidden">
+        <form method="GET" class="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-end sm:p-5" role="search">
+            <div class="flex-1">
+                <label for="q" class="label">Tìm kiếm</label>
+                <input id="q" type="search" name="q" value="{{ query }}" placeholder="Tên đăng nhập, họ tên hoặc email" class="field">
+            </div>
+            <div class="sm:w-48">
+                <label for="role" class="label">Vai trò</label>
+                <select id="role" name="role" class="field">
+                    <option value="" {% if not role %}selected{% endif %}>Tất cả</option>
+                    <option value="admin" {% if role == 'admin' %}selected{% endif %}>Quản trị viên</option>
+                    <option value="student" {% if role == 'student' %}selected{% endif %}>Sinh viên</option>
+                    <option value="locked" {% if role == 'locked' %}selected{% endif %}>Đang bị khóa</option>
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>Lọc</button>
+                {% if query or role %}<a href="{% url 'user_admin_list' %}" class="btn-ghost">Xóa lọc</a>{% endif %}
+            </div>
+        </form>
+
+        {% if page.object_list %}
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[720px] text-left text-sm">
+                    <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <tr>
+                            <th scope="col" class="px-5 py-3">Người dùng</th>
+                            <th scope="col" class="px-5 py-3">Vai trò</th>
+                            <th scope="col" class="px-5 py-3">Trạng thái</th>
+                            <th scope="col" class="px-5 py-3 text-right">Nhiệm vụ</th>
+                            <th scope="col" class="px-5 py-3">Đăng nhập gần nhất</th>
+                            <th scope="col" class="px-5 py-3 text-right">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for u in page.object_list %}
+                            <tr class="{% if not u.is_active %}bg-rose-50/40{% endif %}">
+                                <td class="px-5 py-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-amber-400 to-rose-500 text-xs font-bold uppercase text-white" aria-hidden="true">{{ u.username|slice:":2" }}</span>
+                                        <div class="min-w-0">
+                                            <p class="truncate font-semibold text-slate-900">{{ u.username }}{% if u == user %} <span class="text-xs font-medium text-slate-500">(bạn)</span>{% endif %}</p>
+                                            <p class="truncate text-xs text-slate-500">{% if u.get_full_name %}{{ u.get_full_name }} · {% endif %}{{ u.email|default:"Chưa có email" }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3">
+                                    {% if u.is_superuser %}
+                                        <span class="badge bg-slate-900 text-white"><i class="fa-solid fa-crown" aria-hidden="true"></i>Superuser</span>
+                                    {% elif u.is_staff %}
+                                        <span class="badge bg-violet-50 text-violet-700"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i>Quản trị viên</span>
+                                    {% else %}
+                                        <span class="badge bg-brand-50 text-brand-700"><i class="fa-solid fa-user-graduate" aria-hidden="true"></i>Sinh viên</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-5 py-3">
+                                    {% if u.is_active %}
+                                        <span class="badge bg-emerald-50 text-emerald-700"><i class="fa-solid fa-circle-check" aria-hidden="true"></i>Hoạt động</span>
+                                    {% else %}
+                                        <span class="badge bg-rose-50 text-rose-700"><i class="fa-solid fa-lock" aria-hidden="true"></i>Đã khóa</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-5 py-3 text-right tabular-nums text-slate-700">{{ u.task_count }}<span class="text-xs text-slate-500"> ({{ u.open_count }} mở)</span></td>
+                                <td class="px-5 py-3 text-slate-600">{% if u.last_login %}{{ u.last_login|date:"H:i d/m/Y" }}{% else %}<span class="text-slate-500">Chưa đăng nhập</span>{% endif %}</td>
+                                <td class="px-5 py-3">
+                                    {% if u == user or u.is_superuser and not user.is_superuser %}
+                                        <p class="text-right text-xs text-slate-500">—</p>
+                                    {% else %}
+                                        <div class="flex justify-end gap-1.5">
+                                            <form method="POST" action="{% url 'user_admin_toggle_staff' u.id %}" onsubmit="return confirm('{% if u.is_staff %}Chuyển {{ u.username|escapejs }} về vai trò Sinh viên?{% else %}Cấp quyền Quản trị viên cho {{ u.username|escapejs }}?{% endif %}')">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                                <button type="submit" class="btn-secondary btn-sm">
+                                                    {% if u.is_staff %}<i class="fa-solid fa-user-graduate" aria-hidden="true"></i>Về sinh viên{% else %}<i class="fa-solid fa-shield-halved" aria-hidden="true"></i>Cấp quyền QTV{% endif %}
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{% url 'user_admin_toggle_active' u.id %}" {% if u.is_active %}onsubmit="return confirm('Khóa tài khoản {{ u.username|escapejs }}? Người này sẽ không đăng nhập được.')"{% endif %}>
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                                {% if u.is_active %}
+                                                    <button type="submit" class="btn-sm btn border border-rose-200 text-rose-600 hover:bg-rose-50"><i class="fa-solid fa-lock" aria-hidden="true"></i>Khóa</button>
+                                                {% else %}
+                                                    <button type="submit" class="btn-sm btn border border-emerald-200 text-emerald-700 hover:bg-emerald-50"><i class="fa-solid fa-lock-open" aria-hidden="true"></i>Mở khóa</button>
+                                                {% endif %}
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if page.has_other_pages %}
+                <nav class="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-sm" aria-label="Phân trang">
+                    <span class="text-slate-500">Trang {{ page.number }}/{{ page.paginator.num_pages }} · {{ page.paginator.count }} tài khoản</span>
+                    <div class="flex gap-2">
+                        {% if page.has_previous %}<a class="btn-secondary btn-sm" href="?q={{ query|urlencode }}&role={{ role }}&page={{ page.previous_page_number }}">← Trước</a>{% endif %}
+                        {% if page.has_next %}<a class="btn-secondary btn-sm" href="?q={{ query|urlencode }}&role={{ role }}&page={{ page.next_page_number }}">Sau →</a>{% endif %}
+                    </div>
+                </nav>
+            {% endif %}
+        {% else %}
+            <p class="px-6 py-12 text-center text-sm text-slate-500">Không tìm thấy tài khoản nào phù hợp.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

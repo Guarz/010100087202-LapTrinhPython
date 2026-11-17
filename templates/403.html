@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Không có quyền truy cập - StudyPlanner{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-md py-12 text-center">
+    <span class="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-rose-50 text-2xl text-rose-600"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
+    <p class="mt-5 text-sm font-semibold text-rose-600">Lỗi 403</p>
+    <h1 class="page-title mt-1">Bạn không có quyền truy cập</h1>
+    <p class="page-sub mt-2">{% if exception %}{{ exception }}{% else %}Trang này chỉ dành cho tài khoản có quyền phù hợp.{% endif %}</p>
+    <a href="{% url 'task_list' %}" class="btn-primary mt-6"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Về trang tổng quan</a>
+</div>
+{% endblock %}

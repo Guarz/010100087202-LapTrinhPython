@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="vi">
+<body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#1e293b;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;">
+    <tr><td style="padding:28px 28px 8px;">
+      <p style="margin:0;font-size:18px;font-weight:bold;color:#4f46e5;">StudyPlanner</p>
+    </td></tr>
+    <tr><td style="padding:8px 28px 28px;">
+      <h1 style="margin:0 0 12px;font-size:20px;color:#0f172a;">{% if is_email_change %}Xác nhận email mới{% else %}Xác thực email của bạn{% endif %}</h1>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
+        {% if is_email_change %}
+          Bạn vừa yêu cầu đổi email của tài khoản <b>{{ user.username }}</b> sang địa chỉ này.
+        {% else %}
+          Cảm ơn bạn đã đăng ký với tên đăng nhập <b>{{ user.username }}</b>. Bấm nút dưới đây để kích hoạt tài khoản.
+        {% endif %}
+      </p>
+      <p style="margin:24px 0;">
+        <a href="{{ verify_url }}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:12px;">
+          {% if is_email_change %}Xác nhận email mới{% else %}Xác thực tài khoản{% endif %}
+        </a>
+      </p>
+      <p style="margin:0 0 8px;font-size:13px;color:#64748b;">Link có hiệu lực trong {{ valid_days }} ngày. Nếu nút không bấm được, hãy mở link sau:</p>
+      <p style="margin:0 0 16px;font-size:13px;word-break:break-all;"><a href="{{ verify_url }}" style="color:#4f46e5;">{{ verify_url }}</a></p>
+      <p style="margin:0;font-size:13px;color:#64748b;">Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.</p>
+    </td></tr>
+  </table>
+</body>
+</html>

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -41,11 +42,15 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 if os.getenv('RENDER_EXTERNAL_HOSTNAME'):
+    ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])
     CSRF_TRUSTED_ORIGINS.append(f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}")
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    # Chuyển mọi request HTTP sang HTTPS và báo trình duyệt chỉ dùng HTTPS
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'true').lower() == 'true'
+    SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '3600'))
 
 
 # Application definition
@@ -105,6 +110,14 @@ DATABASES = {
     )
 }
 
+# `manage.py test` không đụng tới database thật (Supabase): mặc định chạy
+# trên SQLite; muốn test với PostgreSQL thì đặt TEST_DATABASE_URL.
+if len(sys.argv) > 1 and sys.argv[1] == 'test':
+    TEST_DATABASE_URL = os.getenv('TEST_DATABASE_URL', f"sqlite:///{BASE_DIR / 'test.sqlite3'}")
+    DATABASES['default'] = dj_database_url.parse(
+        TEST_DATABASE_URL, ssl_require=TEST_DATABASE_URL.startswith('postgres'),
+    )
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
@@ -151,24 +164,34 @@ STATICFILES_DIRS = [
 # Thư mục Django thu thập static khi deploy
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Email reminders use the console backend by default. Configure SMTP through
-# environment variables for delivery outside development.
+# Email (xác thực tài khoản, quên mật khẩu, nhắc deadline):
+# - Có BREVO_API_KEY: gửi thật qua Brevo API (planner/email_backends.py).
+# - Không có: in email ra console để phát triển cục bộ.
+# EMAIL_BACKEND trong .env (nếu đặt) luôn được ưu tiên, VD dùng SMTP.
+BREVO_API_KEY = os.getenv('BREVO_API_KEY', '')
 EMAIL_BACKEND = os.getenv(
     'EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend',
+    'planner.email_backends.BrevoApiBackend' if BREVO_API_KEY
+    else 'django.core.mail.backends.console.EmailBackend',
 )
 EMAIL_HOST = os.getenv('EMAIL_HOST', '')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'true').lower() == 'true'
+# Người gửi: DEFAULT_FROM_EMAIL, hoặc ghép từ MAIL_FROM + MAIL_FROM_NAME.
+# Địa chỉ này phải là sender đã xác minh trên Brevo.
+_mail_from = os.getenv('MAIL_FROM', '').strip()
+_mail_from_name = os.getenv('MAIL_FROM_NAME', 'StudyPlanner').strip()
 DEFAULT_FROM_EMAIL = os.getenv(
     'DEFAULT_FROM_EMAIL',
-    'AI Study Planner <noreply@example.com>',
+    f'{_mail_from_name} <{_mail_from}>' if _mail_from else 'AI Study Planner <noreply@example.com>',
 )
 
 # Uploaded study materials are served only through the authenticated view.
 MEDIA_ROOT = BASE_DIR / 'media'
+# Link xác thực email / đặt lại mật khẩu hết hạn sau 3 ngày
+PASSWORD_RESET_TIMEOUT = 3 * 24 * 3600
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'task_list'
 STORAGES = {
@@ -202,5 +225,32 @@ CELERY_BEAT_SCHEDULE = {
 # Nhắc trong ứng dụng: deadline nằm trong số giờ này sẽ hiện banner + thông báo trình duyệt.
 REMINDER_HOURS_BEFORE = int(os.getenv('REMINDER_HOURS_BEFORE', '24'))
 
-# AI: dùng OPENAI_API_KEY; không có thì dùng phân tích dự phòng.
-OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
+# Bí mật cho endpoint /internal/cron/reminders/ (cron ngoài gọi khi không có Celery worker)
+CRON_SECRET = os.getenv('CRON_SECRET', '')
+
+# ============================================================
+# AI HỖ TRỢ - mọi nhà cung cấp có API chuẩn OpenAI (SDK openai)
+# Thứ tự chọn (planner/ai_assistant.py -> get_ai_provider):
+#   1. AI_BASE_URL  : máy chủ tùy chọn, VD Ollama trên Colab/máy cá nhân
+#                     (https://xxx.trycloudflare.com/v1). Key: AI_API_KEY.
+#   2. GEMINI_API_KEY: Google Gemini qua endpoint tương thích OpenAI.
+#   3. OPENAI_API_KEY: OpenAI.
+# Không có gì -> phân tích dự phòng (không gọi AI).
+# ============================================================
+# Cũng nhận cách đặt tên LLM_PROVIDER=ollama + OLLAMA_URL / OLLAMA_MODEL /
+# OLLAMA_API_KEY / OLLAMA_TIMEOUT_MS. LLM_PROVIDER=ollama mà để trống
+# OLLAMA_URL thì dùng Ollama trên chính máy này (http://localhost:11434).
+LLM_PROVIDER = os.getenv('LLM_PROVIDER', '').strip().lower()
+AI_BASE_URL = (os.getenv('AI_BASE_URL') or os.getenv('OLLAMA_URL') or '').strip().rstrip('/')
+if LLM_PROVIDER == 'ollama' and not AI_BASE_URL:
+    AI_BASE_URL = 'http://localhost:11434'
+if AI_BASE_URL and not AI_BASE_URL.endswith('/v1'):
+    AI_BASE_URL += '/v1'  # Ollama phục vụ API chuẩn OpenAI tại /v1
+AI_API_KEY = os.getenv('AI_API_KEY') or os.getenv('OLLAMA_API_KEY') or ''
+AI_MODEL = (os.getenv('AI_MODEL') or os.getenv('OLLAMA_MODEL') or '').strip()
+AI_TIMEOUT_SECONDS = (
+    float(os.environ['AI_TIMEOUT_SECONDS']) if os.getenv('AI_TIMEOUT_SECONDS')
+    else int(os.getenv('OLLAMA_TIMEOUT_MS', '60000')) / 1000
+)
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')

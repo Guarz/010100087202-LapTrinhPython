@@ -25,7 +25,19 @@
 | **T2** Lịch, deadline, tài liệu, nhắc việc | CRUD sự kiện/deadline, giao diện lịch, đồng bộ .ics, gắn tài liệu, scheduler nhắc việc | FullCalendar kéo thả; **xuất .ics + link đăng ký tự cập nhật (`/calendar/feed/<token>.ics`) + nhập .ics**; tải file tài liệu; nhắc việc 3 lớp: chuông + thông báo trình duyệt trong app, email qua **Celery Beat (15 phút/lần)** hoặc lệnh `send_deadline_reminders` | Tạo task hạn < 24h → chuông đỏ + notification + email |
 | **T3** Thuật toán sinh kế hoạch tuần | Xếp lịch theo ưu tiên/thời lượng/lịch bận, cho chỉnh sửa, unit test | `planner/scheduler.py`: `compute_free_slots` + `plan_sessions` (hàm thuần), phiên ≤ 90 phút, nghỉ 10 phút, không vượt deadline, ≤ 4 giờ/ngày; kéo thả/sửa → `confirmed` và được giữ khi sinh lại; 9 unit test | `seed_demo_data` → **Lập lịch tuần** từ 8 task mẫu |
 | **T4** Pomodoro & UX | Bộ đếm, lưu phiên, thống kê, thông báo | Pomodoro Workspace (`/pomodoro/`), API lưu phiên/thống kê/heatmap, thông báo trình duyệt khi hết phiên | Chạy một phiên rồi xem thống kê |
-| **T5** AI phân bổ thời gian, cảnh báo trễ, deploy | Điểm rủi ro trễ hạn, AI tóm tắt ngày, kiểm thử, deploy | `planner/risk.py` (điểm 0–100, 5 thành phần), hiển thị trên Tổng quan + Trợ lý AI + `/api/risk/`; OpenAI tóm tắt ngày (có dự phòng khi không có key); 43 test; `render.yaml`, `Procfile` | Task gần hạn hiện **Rủi ro cao** kèm lý do |
+| **T5** AI phân bổ thời gian, cảnh báo trễ, deploy | Điểm rủi ro trễ hạn, AI tóm tắt ngày, kiểm thử, deploy | `planner/risk.py` (điểm 0–100, 5 thành phần), hiển thị trên Tổng quan + Trợ lý AI + `/api/risk/`; OpenAI tóm tắt ngày (có dự phòng khi không có key); 80 test; `render.yaml`, `Procfile` | Task gần hạn hiện **Rủi ro cao** kèm lý do |
+
+### Yêu cầu tối thiểu: đăng nhập, phân quyền, quản lý user
+
+| Yêu cầu | Đã làm |
+|---|---|
+| Đăng ký | 3 trường: email, tên đăng nhập, mật khẩu. Gửi **link xác thực email qua Brevo**; chưa xác thực thì chưa đăng nhập được (có nút gửi lại, chờ 60 giây giữa 2 lần) |
+| Đăng nhập | Tên đăng nhập + mật khẩu, đăng xuất bằng POST, quay lại đúng trang qua `?next=` |
+| Lời mời lịch qua email | Bật trong Hồ sơ: mỗi deadline và phiên học đã xác nhận được gửi tới email đã xác thực dưới dạng lời mời iCalendar (`METHOD:REQUEST`, đính kèm `invite.ics`). Sửa thì gửi lại cùng UID với `SEQUENCE` tăng; xóa/hoàn thành thì gửi `METHOD:CANCEL`. Gửi qua Celery (`planner/calendar_invites.py`, `planner/signals.py`) |
+| Quên mật khẩu | `/password-reset/`: một email có thể dùng cho **nhiều tài khoản**; mỗi tài khoản nhận một email riêng ghi rõ tên đăng nhập. Link hết hạn sau 3 ngày |
+| Phân quyền cơ bản | 2 vai trò: **Quản trị viên** (`is_staff`) và **Sinh viên**. Decorator `admin_required` trả 403 nếu không đủ quyền; mỗi người chỉ thấy dữ liệu của mình |
+| Quản lý user | Trang `/manage/users/` (chỉ quản trị viên): tìm kiếm, lọc theo vai trò, khóa/mở khóa, cấp/gỡ quyền quản trị; không tự khóa/hạ quyền chính mình, không sửa được superuser |
+| Hồ sơ cá nhân | `/profile/`: đổi họ tên; **tên đăng nhập không đổi được**; đổi email chỉ có hiệu lực sau khi bấm link xác nhận gửi tới email mới; đổi mật khẩu mà vẫn giữ phiên đăng nhập |
 
 ### Công nghệ theo yêu cầu
 
@@ -35,7 +47,7 @@
 | FastAPI cho API phụ trợ | ✅ `planner/fastapi_app.py`, gắn tại `/api/v2` (Swagger `/api/v2/docs`) qua `core/asgi.py` |
 | PostgreSQL | ✅ qua `DATABASE_URL` (Render/Supabase); SQLite khi chạy cục bộ không có biến này |
 | Redis/Celery cho background jobs | ✅ `core/celery.py`, `planner/tasks.py`, Beat gửi nhắc deadline |
-| OpenAI/Claude hỗ trợ | ✅ OpenAI (`OPENAI_API_KEY`), không bắt buộc |
+| OpenAI/Claude hỗ trợ | ✅ SDK `openai` theo chuẩn OpenAI-compatible: chạy với **Ollama** (Colab/máy cá nhân, `AI_BASE_URL`), **Gemini** (`GEMINI_API_KEY`) hoặc OpenAI (`OPENAI_API_KEY`); không bắt buộc |
 | Deploy Render/Fly.io/Railway | ✅ `render.yaml` (web + Postgres + Redis + worker), `Procfile` (Railway) |
 
 ### Công thức điểm rủi ro trễ hạn (T5)
@@ -97,7 +109,7 @@ score = 50 × min(remaining / capacity, 1)        # áp lực thời gian
 ### Trợ lý AI
 
 - Phân tích nhiệm vụ chưa hoàn thành, deadline, mức ưu tiên và lịch sử Pomodoro 7 ngày gần nhất.
-- Khi có `OPENAI_API_KEY`, gọi OpenAI để tạo tóm tắt, cảnh báo rủi ro và lời khuyên học tập.
+- Khi đã cấu hình AI (Ollama, Gemini hoặc OpenAI), gọi model để tạo tóm tắt, cảnh báo rủi ro và lời khuyên học tập; máy chủ AI tắt thì tự dùng phân tích dự phòng.
 - Khi không có API key, tạo phân tích dự phòng dựa trên số liệu nhiệm vụ/Pomodoro, không cần gọi dịch vụ AI.
 
 ## Luồng sử dụng
@@ -110,7 +122,8 @@ score = 50 × min(remaining / capacity, 1)        # áp lực thời gian
 5. Mở `/pomodoro/`, chọn nhiệm vụ hoặc Quick Goal, bắt đầu tập trung; khi kết thúc hoặc gác lại, phiên được gửi tới API để kiểm tra và lưu.
 6. Xem thống kê/heatmap trong giao diện Pomodoro; các API chỉ trả dữ liệu thuộc người dùng hiện tại.
 7. Mở `/ai-assistant/` để xem phân tích lịch học.
-8. Dùng `/logout/` để đăng xuất.
+8. Vào **Hồ sơ & mật khẩu** trong menu tài khoản để đổi thông tin; quản trị viên có thêm mục **Quản lý người dùng**.
+9. Bấm **Đăng xuất** trong menu tài khoản.
 
 ### Nhắc deadline qua email
 
@@ -171,7 +184,8 @@ Sao chép `.env.example` thành `.env`. Để trống `DATABASE_URL` sẽ dùng 
 
 ```bash
 python manage.py migrate
-python manage.py seed_demo_data --username demo --create-user   # tài khoản demo / demo12345
+python manage.py seed_demo_data --username demo --create-user --staff   # demo / demo12345, vai trò quản trị viên
+python manage.py seed_demo_data --username sv01 --create-user           # tài khoản sinh viên để thử phân quyền
 python manage.py runserver            # chỉ Django
 uvicorn core.asgi:application --reload # Django + FastAPI (/api/v2/docs)
 ```
@@ -302,7 +316,7 @@ Mỗi khóa học thuộc một người dùng; mã khóa học (`code`) là duy
 | `/task/<id>/delete/` | POST | Xóa nhiệm vụ |
 | `/register/` | GET/POST | Đăng ký tài khoản |
 | `/login/` | GET/POST | Đăng nhập |
-| `/logout/` | GET | Đăng xuất |
+| `/logout/` | POST | Đăng xuất |
 | `/calendar/` | GET | Giao diện lịch |
 | `/calendar/export.ics` | GET | Tải deadline và sự kiện của người dùng đang đăng nhập dưới dạng iCalendar |
 | `/calendar/events/new/` | GET/POST | Tạo sự kiện lịch thủ công |
@@ -325,6 +339,10 @@ Mỗi khóa học thuộc một người dùng; mã khóa học (`code`) là duy
 | `/calendar/feed/reset/` | POST | Tạo token đăng ký lịch mới |
 | `/api/risk/` | GET | Điểm rủi ro trễ hạn của các task đang mở |
 | `/api/v2/health`, `/api/v2/risk`, `/api/v2/plan` | GET/POST | API phụ trợ FastAPI (tính rủi ro, xếp lịch thử) |
+| `/profile/` | GET/POST | Hồ sơ cá nhân, đổi mật khẩu |
+| `/manage/users/` | GET | Quản lý người dùng (chỉ quản trị viên) |
+| `/manage/users/<id>/toggle-active/` | POST | Khóa / mở khóa tài khoản |
+| `/manage/users/<id>/toggle-staff/` | POST | Cấp / gỡ vai trò quản trị viên |
 | `/admin/` | GET | Trang quản trị Django |
 
 Các thao tác CRUD deadline/sự kiện và API lịch yêu cầu đăng nhập; cập nhật lịch bằng kéo thả cần CSRF hợp lệ. Task và sự kiện chỉ được sửa/xóa bởi chủ sở hữu. API lưu Pomodoro cần JSON hợp lệ và trạng thái `completed` hoặc `deferred`; phiên mới cần `session_uuid`. API thống kê chỉ tính phiên hoàn thành và chỉ trả dữ liệu của tài khoản hiện tại.
@@ -382,19 +400,20 @@ Các thao tác CRUD deadline/sự kiện và API lịch yêu cầu đăng nhập
 
 ## Cấu hình trợ lý AI
 
-Trợ lý AI đọc API key từ biến môi trường `OPENAI_API_KEY`.
+Trợ lý AI dùng SDK `openai` với mọi máy chủ theo chuẩn OpenAI. Thứ tự chọn: `AI_BASE_URL` (Ollama, xem `docs/ollama_colab.ipynb`) → `GEMINI_API_KEY` → `OPENAI_API_KEY`. Đổi model bằng `AI_MODEL`.
 
-PowerShell:
-
-```powershell
-$env:OPENAI_API_KEY = "your-openai-api-key"
-```
-
-macOS / Linux:
+Đặt trong `.env` (chọn một):
 
 ```bash
-export OPENAI_API_KEY="your-openai-api-key"
+# Ollama chạy trên Google Colab, mở ra ngoài bằng Cloudflare Tunnel
+AI_BASE_URL=https://ten-ngau-nhien.trycloudflare.com/v1
+AI_MODEL=qwen2.5:7b
+
+# Hoặc Google Gemini
+GEMINI_API_KEY=your-gemini-api-key
 ```
+
+Máy chủ AI tắt (Colab hết phiên, đổi link tunnel) thì trang Trợ lý AI tự chuyển sang phân tích dự phòng và ghi rõ "Không kết nối được AI".
 
 Không ghi API key, mật khẩu hoặc URL database có thông tin xác thực vào README, Git hay log chia sẻ.
 
@@ -404,7 +423,7 @@ Không ghi API key, mật khẩu hoặc URL database có thông tin xác thực 
 python manage.py test
 ```
 
-43 test bao gồm: đăng nhập, seed, quyền sở hữu dữ liệu, upload tài liệu, nhắc email (lệnh + Celery), xuất/đăng ký/nhập .ics, **thuật toán xếp lịch** (ưu tiên, chia phiên, deadline, giới hạn/ngày, không chồng lịch với 8 task mẫu), **điểm rủi ro** và API FastAPI. Không đặt `DATABASE_URL` thì test chạy trên SQLite.
+80 test bao gồm: **lời mời lịch qua email (REQUEST/SEQUENCE/CANCEL)**, **đăng ký và xác thực email, quên mật khẩu với một email nhiều tài khoản, đổi email cần xác nhận, backend Brevo**, đăng nhập, **phân quyền và quản lý user** (sinh viên bị 403, khóa tài khoản, cấp quyền, hồ sơ, đổi mật khẩu, chống open redirect), seed, quyền sở hữu dữ liệu, upload tài liệu, nhắc email (lệnh + Celery), xuất/đăng ký/nhập .ics, **thuật toán xếp lịch** (ưu tiên, chia phiên, deadline, giới hạn/ngày, không chồng lịch với 8 task mẫu), **điểm rủi ro** và API FastAPI. Không đặt `DATABASE_URL` thì test chạy trên SQLite.
 
 ## Triển khai
 
@@ -412,8 +431,8 @@ python manage.py test
 
 1. Đẩy mã lên GitHub.
 2. Render Dashboard → **New → Blueprint** → chọn repo. `render.yaml` tạo: web service (uvicorn chạy Django + FastAPI), PostgreSQL, Redis và worker Celery.
-3. Điền `OPENAI_API_KEY` (tùy chọn). `SECRET_KEY` được sinh tự động, `DEBUG=false`.
-4. Sau khi deploy: mở Shell của web service và chạy `python manage.py seed_demo_data --username demo --create-user` để có dữ liệu demo.
+3. Điền `GEMINI_API_KEY` hoặc `AI_BASE_URL` (tùy chọn), `BREVO_API_KEY`, `DEFAULT_FROM_EMAIL`. `SECRET_KEY` được sinh tự động, `DEBUG=false`.
+4. Sau khi deploy: mở Shell của web service và chạy `python manage.py seed_demo_data --username demo --create-user --staff` để có dữ liệu demo và một tài khoản quản trị viên.
 
 Gói free của Render không có background worker: xóa service worker trong `render.yaml` và tạo **Cron Job** chạy `python manage.py send_deadline_reminders` mỗi 15 phút.
 
@@ -423,4 +442,4 @@ Gói free của Render không có background worker: xóa service worker trong `
 
 ### Biến môi trường
 
-Xem `.env.example`: `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `DATABASE_URL`, `REDIS_URL`, `OPENAI_API_KEY`, `REMINDER_HOURS_BEFORE`, cấu hình SMTP.
+Xem `.env.example`: `BREVO_API_KEY` + `DEFAULT_FROM_EMAIL` (gửi email qua Brevo API, sender phải được xác minh trên Brevo), `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `DATABASE_URL`, `REDIS_URL`, `AI_BASE_URL` / `GEMINI_API_KEY` / `OPENAI_API_KEY`, `AI_MODEL`, `REMINDER_HOURS_BEFORE`, cấu hình SMTP.

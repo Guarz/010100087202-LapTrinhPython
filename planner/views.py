@@ -18,12 +18,14 @@ import json
 import os
 import uuid
 from datetime import timedelta
+from functools import wraps
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.files.storage import default_storage
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 
 from django.views.decorators.csrf import (
+    csrf_exempt,
     ensure_csrf_cookie,
 )
 
@@ -33,19 +35,30 @@ from django.views.decorators.http import (
     require_POST,
 )
 
-from django.db.models import Count, Sum
+from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
+from django.db.models import Count, Q, Sum
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.encoding import force_str
+from django.utils.http import url_has_allowed_host_and_scheme, urlsafe_base64_decode
+from django.urls import reverse_lazy
 
 from django.contrib import messages
-from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
+from django.contrib.auth.models import User
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.utils.dateparse import parse_datetime
 
 from .forms import (
     CourseForm,
     IcsImportForm,
+    LoginForm,
+    ProfileForm,
+    StyledPasswordResetForm,
+    StyledSetPasswordForm,
+    StyledPasswordChangeForm,
     StudyHoursForm,
     TaskForm,
     ScheduleBlockForm,
@@ -63,6 +76,7 @@ from .models import (
 )
 
 from .scheduler import generate_weekly_plan
+from .accounts import email_verification_token, mask_email, send_verification_email
 from .ai_assistant import analyze_schedule_with_ai
 from .icalendar import build_user_calendar, import_ics_for_user
 from .risk import assess_task, assess_user_tasks
@@ -595,6 +609,30 @@ def delete_course(request, course_id):
 # 04c. RISK API
 # ============================================================
 
+@csrf_exempt
+@require_POST
+def cron_send_reminders(request):
+    """
+    Nhắc deadline định kỳ khi không có Celery worker (Render gói free).
+    Dịch vụ cron ngoài gọi POST mỗi 15 phút, kèm header X-Cron-Secret.
+    Không cấu hình CRON_SECRET thì endpoint coi như không tồn tại.
+    """
+    import hmac
+    from io import StringIO
+    from django.conf import settings
+    from django.core.management import call_command
+
+    secret = settings.CRON_SECRET
+    provided = request.headers.get('X-Cron-Secret', '')
+    if not secret:
+        raise Http404
+    if not hmac.compare_digest(provided.encode(), secret.encode()):
+        return JsonResponse({'status': 'forbidden'}, status=403)
+    output = StringIO()
+    call_command('send_deadline_reminders', stdout=output)
+    return JsonResponse({'status': 'ok', 'result': output.getvalue().strip()})
+
+
 @login_required
 @require_GET
 def risk_api(request):
@@ -1046,48 +1084,98 @@ def ai_assistant_view(request):
 # GIỮ NGUYÊN LOGIC CŨ
 # ============================================================
 
+PENDING_VERIFICATION_SESSION_KEY = 'pending_verification_user_id'
+RESEND_COOLDOWN_SECONDS = 60
+
+
 def register_view(request):
-
+    """Đăng ký: email + tên đăng nhập + mật khẩu, rồi gửi email xác thực."""
     if request.user.is_authenticated:
-
-        return redirect(
-            'task_list'
-        )
+        return redirect('task_list')
 
     if request.method == 'POST':
-
-        form = RegisterForm(
-            request.POST
-        )
-
+        form = RegisterForm(request.POST)
         if form.is_valid():
-
             user = form.save()
-
-            UserProfile.objects.get_or_create(
-                user=user
-            )
-
-            login(
-                request,
-                user
-            )
-
-            return redirect(
-                'task_list'
-            )
-
+            UserProfile.objects.update_or_create(user=user, defaults={'email_verified': False})
+            request.session[PENDING_VERIFICATION_SESSION_KEY] = user.pk
+            _send_verification_or_warn(request, user)
+            return redirect('verify_email_sent')
     else:
-
         form = RegisterForm()
 
-    return render(
-        request,
-        'planner/register.html',
-        {
-            'form': form
-        }
-    )
+    return render(request, 'planner/register.html', {'form': form})
+
+
+def _send_verification_or_warn(request, user, to_email=None):
+    try:
+        send_verification_email(request, user, to_email)
+    except Exception:
+        messages.error(request, 'Chưa gửi được email xác thực. Vui lòng bấm "Gửi lại email" sau ít phút.')
+        return False
+    request.session['verification_sent_at'] = timezone.now().timestamp()
+    return True
+
+
+def verify_email_sent(request):
+    """Trang "Kiểm tra hộp thư" sau khi đăng ký hoặc khi đăng nhập lúc chưa xác thực."""
+    user = User.objects.filter(pk=request.session.get(PENDING_VERIFICATION_SESSION_KEY)).first()
+    if user is None:
+        return redirect('login')
+    return render(request, 'planner/verify_email_sent.html', {
+        'pending_user': user,
+        'masked_email': mask_email(user.email),
+        'cooldown': RESEND_COOLDOWN_SECONDS,
+    })
+
+
+@require_POST
+def resend_verification_email(request):
+    user = User.objects.filter(pk=request.session.get(PENDING_VERIFICATION_SESSION_KEY)).first()
+    if user is None:
+        return redirect('login')
+    if getattr(getattr(user, 'profile', None), 'email_verified', True):
+        messages.info(request, 'Tài khoản đã được xác thực, bạn có thể đăng nhập.')
+        return redirect('login')
+
+    last_sent = request.session.get('verification_sent_at', 0)
+    wait = int(last_sent + RESEND_COOLDOWN_SECONDS - timezone.now().timestamp())
+    if wait > 0:
+        messages.warning(request, f'Vui lòng đợi {wait} giây trước khi gửi lại.')
+    elif _send_verification_or_warn(request, user):
+        messages.success(request, f'Đã gửi lại email xác thực tới {mask_email(user.email)}.')
+    return redirect('verify_email_sent')
+
+
+@require_GET
+def verify_email(request, uidb64, token):
+    """Mở từ link trong email: xác thực tài khoản mới hoặc xác nhận email mới."""
+    try:
+        user = User.objects.select_related('profile').get(pk=force_str(urlsafe_base64_decode(uidb64)))
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is None or not email_verification_token.check_token(user, token):
+        messages.error(request, 'Link xác thực không hợp lệ hoặc đã hết hạn. Hãy yêu cầu gửi lại email.')
+        return redirect('profile' if request.user.is_authenticated else 'login')
+
+    profile = user.profile
+    if profile.pending_email:
+        user.email = profile.pending_email
+        user.save(update_fields=['email'])
+        profile.pending_email = ''
+        profile.email_verified = True
+        profile.save(update_fields=['pending_email', 'email_verified'])
+        messages.success(request, f'Đã đổi email thành {user.email}.')
+    else:
+        profile.email_verified = True
+        profile.save(update_fields=['email_verified'])
+        messages.success(request, f'Xác thực email thành công! Hãy đăng nhập bằng tên "{user.username}".')
+
+    request.session.pop(PENDING_VERIFICATION_SESSION_KEY, None)
+    if request.user.is_authenticated:
+        return redirect('profile')
+    return redirect(f"{reverse('login')}?username={user.username}")
 
 
 # ============================================================
@@ -1105,10 +1193,16 @@ def login_view(request):
 
     if request.method == 'POST':
 
-        form = AuthenticationForm(
+        form = LoginForm(
             request,
             data=request.POST
         )
+
+        if form.has_error('__all__', code='unverified'):
+            # Mật khẩu đúng nhưng chưa xác thực email: cho phép gửi lại link
+            request.session[PENDING_VERIFICATION_SESSION_KEY] = form.get_user().pk
+            messages.warning(request, form.error_messages['unverified'])
+            return redirect('verify_email_sent')
 
         if form.is_valid():
 
@@ -1120,20 +1214,33 @@ def login_view(request):
             )
 
             return redirect(
-                'task_list'
+                _safe_next_url(request) or 'task_list'
             )
 
     else:
 
-        form = AuthenticationForm()
+        form = LoginForm(request, initial={'username': request.GET.get('username', '')})
 
     return render(
         request,
         'planner/login.html',
         {
-            'form': form
+            'form': form,
+            'next': _safe_next_url(request) or '',
         }
     )
+
+
+def _safe_next_url(request):
+    """Chỉ chấp nhận ?next= trỏ về chính trang web này (chống open redirect)."""
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return next_url
+    return None
 
 
 # ============================================================
@@ -1141,6 +1248,7 @@ def login_view(request):
 # GIỮ NGUYÊN LOGIC CŨ
 # ============================================================
 
+@require_POST
 def logout_view(request):
 
     logout(
@@ -1150,3 +1258,223 @@ def logout_view(request):
     return redirect(
         'login'
     )
+
+
+# ============================================================
+# 14. HỒ SƠ CÁ NHÂN
+# ============================================================
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def profile_view(request):
+    user = request.user
+    profile_form = ProfileForm(instance=user)
+    password_form = StyledPasswordChangeForm(user)
+
+    if request.method == 'POST':
+        if request.POST.get('form') == 'password':
+            password_form = StyledPasswordChangeForm(user, request.POST)
+            if password_form.is_valid():
+                password_form.save()
+                # Giữ phiên đăng nhập hiện tại sau khi đổi mật khẩu
+                update_session_auth_hash(request, password_form.user)
+                messages.success(request, 'Đã đổi mật khẩu.')
+                return redirect('profile')
+        elif request.POST.get('form') == 'cancel_email':
+            UserProfile.objects.filter(user=user).update(pending_email='')
+            messages.info(request, 'Đã hủy yêu cầu đổi email.')
+            return redirect('profile')
+        elif request.POST.get('form') == 'invites':
+            _toggle_calendar_invites(request, user, request.POST.get('enabled') == '1')
+            return redirect('profile')
+        else:
+            old_email = user.email
+            profile_form = ProfileForm(request.POST, instance=user)
+            if profile_form.is_valid():
+                new_email = profile_form.cleaned_data['email']
+                user = profile_form.save(commit=False)
+                user.email = old_email  # chỉ đổi sau khi xác nhận email mới
+                user.save(update_fields=['first_name', 'last_name'])
+                if new_email != old_email.lower():
+                    profile, _ = UserProfile.objects.get_or_create(user=user)
+                    profile.pending_email = new_email
+                    profile.save(update_fields=['pending_email'])
+                    if _send_verification_or_warn(request, user, new_email):
+                        messages.info(request, f'Đã gửi link xác nhận tới {new_email}. Email chỉ được đổi sau khi bạn bấm link đó.')
+                else:
+                    messages.success(request, 'Đã cập nhật thông tin cá nhân.')
+                return redirect('profile')
+
+    stats = {
+        'tasks': user.tasks.count(),
+        'completed': user.tasks.filter(status='completed').count(),
+        'courses': user.courses.count(),
+        'focus_minutes': (
+            user.pomodoro_logs.filter(status='completed')
+            .aggregate(total=Sum('actual_seconds'))['total'] or 0
+        ) // 60,
+    }
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    return render(request, 'planner/profile.html', {
+        'pending_email': profile.pending_email,
+        'profile': profile,
+        'profile_form': profile_form,
+        'password_form': password_form,
+        'stats': stats,
+    })
+
+
+def _toggle_calendar_invites(request, user, enabled):
+    """Bật/tắt gửi lời mời lịch qua email; khi bật thì gửi luôn cho các mục sắp tới."""
+    from .tasks import send_all_calendar_invites_task
+
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    if enabled and not (user.email and profile.email_verified):
+        messages.error(request, 'Cần có email đã xác thực trước khi bật lời mời lịch.')
+        return
+    profile.calendar_invites_enabled = enabled
+    profile.save(update_fields=['calendar_invites_enabled'])
+    if not enabled:
+        messages.info(request, 'Đã tắt lời mời lịch qua email. Các sự kiện đã có trong lịch của bạn vẫn giữ nguyên.')
+        return
+    try:
+        send_all_calendar_invites_task.delay(user.pk)
+    except Exception:
+        messages.warning(request, 'Đã bật lời mời lịch nhưng chưa gửi được ngay; các thay đổi sau sẽ được gửi.')
+        return
+    messages.success(request, f'Đã bật lời mời lịch. Đang gửi các deadline và phiên học sắp tới tới {user.email}.')
+
+
+# ============================================================
+# 15. PHÂN QUYỀN & QUẢN LÝ NGƯỜI DÙNG
+#
+# Hai vai trò dựa trên cờ is_staff có sẵn của Django:
+# - Quản trị viên (is_staff=True): quản lý tài khoản người dùng.
+# - Sinh viên (is_staff=False): chỉ dùng dữ liệu của chính mình.
+# ============================================================
+
+def admin_required(view_func):
+    """Chỉ cho Quản trị viên; người khác nhận lỗi 403."""
+    @wraps(view_func)
+    @login_required
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_staff:
+            raise PermissionDenied('Chỉ quản trị viên mới truy cập được trang này.')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+@admin_required
+@require_GET
+def user_admin_list(request):
+    query = request.GET.get('q', '').strip()
+    role = request.GET.get('role', '')
+
+    users = User.objects.annotate(
+        task_count=Count('tasks', distinct=True),
+        open_count=Count('tasks', filter=~Q(tasks__status='completed'), distinct=True),
+    ).order_by('-is_staff', 'username')
+    if query:
+        users = users.filter(
+            Q(username__icontains=query)
+            | Q(email__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+        )
+    if role == 'admin':
+        users = users.filter(is_staff=True)
+    elif role == 'student':
+        users = users.filter(is_staff=False)
+    elif role == 'locked':
+        users = users.filter(is_active=False)
+
+    page = Paginator(users, 20).get_page(request.GET.get('page'))
+    week_ago = timezone.now() - timedelta(days=7)
+    stats = User.objects.aggregate(
+        total=Count('id'),
+        admins=Count('id', filter=Q(is_staff=True)),
+        locked=Count('id', filter=Q(is_active=False)),
+        new=Count('id', filter=Q(date_joined__gte=week_ago)),
+    )
+    return render(request, 'planner/user_admin_list.html', {
+        'page': page,
+        'query': query,
+        'role': role,
+        'stats': stats,
+    })
+
+
+def _managed_user(request, user_id):
+    """Lấy tài khoản cần thao tác và chặn các thao tác không hợp lệ."""
+    target = get_object_or_404(User, pk=user_id)
+    if target == request.user:
+        messages.error(request, 'Bạn không thể tự thay đổi quyền hoặc khóa tài khoản của chính mình.')
+        return None
+    if target.is_superuser and not request.user.is_superuser:
+        messages.error(request, 'Chỉ superuser mới được thay đổi tài khoản superuser.')
+        return None
+    return target
+
+
+def _back_to_user_list(request):
+    next_url = request.POST.get('next', '')
+    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return redirect(next_url)
+    return redirect('user_admin_list')
+
+
+@admin_required
+@require_POST
+def user_admin_toggle_active(request, user_id):
+    target = _managed_user(request, user_id)
+    if target:
+        target.is_active = not target.is_active
+        target.save(update_fields=['is_active'])
+        if target.is_active:
+            messages.success(request, f'Đã mở khóa tài khoản "{target.username}".')
+        else:
+            messages.success(request, f'Đã khóa tài khoản "{target.username}". Người dùng này không thể đăng nhập.')
+    return _back_to_user_list(request)
+
+
+@admin_required
+@require_POST
+def user_admin_toggle_staff(request, user_id):
+    target = _managed_user(request, user_id)
+    if target:
+        target.is_staff = not target.is_staff
+        target.save(update_fields=['is_staff'])
+        if target.is_staff:
+            messages.success(request, f'Đã cấp quyền quản trị cho "{target.username}".')
+        else:
+            messages.success(request, f'Đã chuyển "{target.username}" về vai trò sinh viên.')
+    return _back_to_user_list(request)
+
+
+# ============================================================
+# 16. QUÊN MẬT KHẨU
+#
+# Dùng view có sẵn của Django. PasswordResetForm gửi một email riêng
+# cho TỪNG tài khoản đang dùng địa chỉ đó (một email nhiều tài khoản),
+# trong email ghi rõ tên đăng nhập để người dùng chọn đúng tài khoản.
+# ============================================================
+
+class PasswordResetRequestView(auth_views.PasswordResetView):
+    template_name = 'planner/password_reset_form.html'
+    form_class = StyledPasswordResetForm
+    subject_template_name = 'planner/emails/password_reset_subject.txt'
+    email_template_name = 'planner/emails/password_reset.txt'
+    html_email_template_name = 'planner/emails/password_reset.html'
+    success_url = reverse_lazy('password_reset_done')
+
+
+class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
+    template_name = 'planner/password_reset_confirm.html'
+    form_class = StyledSetPasswordForm
+    success_url = reverse_lazy('password_reset_complete')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        # Mở được link trong hộp thư nghĩa là đã chứng minh sở hữu email
+        UserProfile.objects.filter(user=form.user).update(email_verified=True)
+        return response

@@ -133,12 +133,20 @@
                                 <span class="text-sm font-semibold text-slate-700">{{ user.username }}</span>
                                 <i class="fa-solid fa-chevron-down text-[10px] text-slate-500"></i>
                             </button>
-                            <div data-dropdown-menu class="hidden absolute right-0 mt-2 w-52 card p-1.5 z-50">
+                            <div data-dropdown-menu class="hidden absolute right-0 mt-2 w-60 card p-1.5 z-50">
+                                <div class="px-3 pb-2 pt-1.5">
+                                    <p class="truncate text-sm font-semibold text-slate-900">{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}</p>
+                                    <p class="text-xs text-slate-500">{% if user.is_staff %}Quản trị viên{% else %}Sinh viên{% endif %}</p>
+                                </div>
+                                <a href="{% url 'profile' %}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"><i class="fa-regular fa-id-card w-4" aria-hidden="true"></i>Hồ sơ & mật khẩu</a>
+                                <a href="{% url 'recurring_list' %}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"><i class="fa-regular fa-moon w-4" aria-hidden="true"></i>Khung giờ ngủ / học</a>
                                 {% if user.is_staff %}
-                                    <a href="{% url 'admin:index' %}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"><i class="fa-solid fa-gear w-4"></i>Trang quản trị</a>
+                                    <a href="{% url 'user_admin_list' %}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-violet-700 hover:bg-violet-50"><i class="fa-solid fa-users-gear w-4" aria-hidden="true"></i>Quản lý người dùng</a>
                                 {% endif %}
-                                <a href="{% url 'recurring_list' %}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"><i class="fa-regular fa-moon w-4"></i>Khung giờ ngủ / học</a>
-                                <a href="{% url 'logout' %}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50"><i class="fa-solid fa-right-from-bracket w-4"></i>Đăng xuất</a>
+                                <form method="POST" action="{% url 'logout' %}" class="mt-1 border-t border-slate-100 pt-1">
+                                    {% csrf_token %}
+                                    <button type="submit" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50"><i class="fa-solid fa-right-from-bracket w-4" aria-hidden="true"></i>Đăng xuất</button>
+                                </form>
                             </div>
                         </div>
 
@@ -162,10 +170,17 @@
                 <a href="{% url 'course_list' %}" class="nav-link {% if url_name == 'course_list' %}active{% endif %}"><i class="fa-solid fa-book w-4"></i>Môn học</a>
                 <a href="{% url 'pomodoro_view' %}" class="nav-link {% if url_name == 'pomodoro_view' %}active{% endif %}"><i class="fa-solid fa-stopwatch w-4"></i>Pomodoro</a>
                 <a href="{% url 'ai_assistant_view' %}" class="nav-link {% if url_name == 'ai_assistant_view' %}active{% endif %}"><i class="fa-solid fa-wand-magic-sparkles w-4"></i>Trợ lý AI</a>
+                <a href="{% url 'profile' %}" class="nav-link {% if url_name == 'profile' %}active{% endif %}"><i class="fa-regular fa-id-card w-4" aria-hidden="true"></i>Hồ sơ</a>
+                {% if user.is_staff %}
+                    <a href="{% url 'user_admin_list' %}" class="nav-link {% if url_name == 'user_admin_list' %}active{% endif %}"><i class="fa-solid fa-users-gear w-4" aria-hidden="true"></i>Người dùng</a>
+                {% endif %}
             </div>
             <div class="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
-                <span class="text-sm font-semibold text-slate-600"><i class="fa-regular fa-user mr-1"></i>{{ user.username }}</span>
-                <a href="{% url 'logout' %}" class="btn-danger btn-sm"><i class="fa-solid fa-right-from-bracket"></i>Đăng xuất</a>
+                <span class="text-sm font-semibold text-slate-600"><i class="fa-regular fa-user mr-1" aria-hidden="true"></i>{{ user.username }} · {% if user.is_staff %}Quản trị viên{% else %}Sinh viên{% endif %}</span>
+                <form method="POST" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-danger btn-sm"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>Đăng xuất</button>
+                </form>
             </div>
         </div>
         {% endif %}

@@ -7,23 +7,27 @@
 <div class="mx-auto max-w-sm space-y-6">
     <div>
         <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Chào mừng trở lại</h1>
-        <p class="mt-1 text-sm text-slate-500">Đăng nhập để tiếp tục kế hoạch học tập của bạn.</p>
+        <p class="mt-1 text-sm text-slate-500">Đăng nhập bằng tên đăng nhập và mật khẩu.</p>
     </div>
 
     <form method="POST" class="space-y-4">
         {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
         {% if form.errors %}
             <div role="alert" class="flex items-center gap-2 rounded-xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-700">
-                <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>Tên đăng nhập hoặc mật khẩu không chính xác.
+                <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{% if form.non_field_errors %}{{ form.non_field_errors.0 }}{% else %}Vui lòng nhập tên đăng nhập và mật khẩu.{% endif %}
             </div>
         {% endif %}
         <div>
             <label for="id_username" class="label">Tên đăng nhập</label>
-            <input id="id_username" type="text" name="username" value="{{ form.username.value|default:'' }}" required {% if not form.errors %}autofocus{% endif %} autocomplete="username" autocapitalize="none" spellcheck="false" class="field">
+            <input id="id_username" type="text" name="username" value="{{ form.username.value|default:'' }}" required {% if not form.errors and not form.username.value %}autofocus{% endif %} autocomplete="username" autocapitalize="none" spellcheck="false" class="field">
         </div>
         <div>
-            <label for="id_password" class="label">Mật khẩu</label>
-            <input id="id_password" type="password" name="password" required {% if form.errors %}autofocus{% endif %} autocomplete="current-password" class="field">
+            <div class="mb-1.5 flex items-center justify-between">
+                <label for="id_password" class="label mb-0">Mật khẩu</label>
+                <a href="{% url 'password_reset' %}" class="text-xs font-semibold text-brand-600 hover:underline">Quên mật khẩu?</a>
+            </div>
+            <input id="id_password" type="password" name="password" required {% if form.errors or form.username.value %}autofocus{% endif %} autocomplete="current-password" class="field">
         </div>
         <button type="submit" class="btn-primary w-full py-3">Đăng nhập</button>
     </form>

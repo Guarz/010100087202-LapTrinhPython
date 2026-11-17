@@ -15,6 +15,7 @@
 # - Chuẩn bị kết nối Heatmap Timeline V2.3
 # ============================================================
 
+from django.contrib.auth import views as auth_views
 from django.urls import path
 from . import views
 
@@ -323,5 +324,24 @@ urlpatterns = [
     path('calendar/import/', views.import_calendar_ics, name='import_calendar_ics'),
     path('calendar/feed/reset/', views.reset_calendar_token, name='reset_calendar_token'),
     path('api/risk/', views.risk_api, name='risk_api'),
+    path('internal/cron/reminders/', views.cron_send_reminders, name='cron_send_reminders'),
+
+    # ========================================================
+    # HỒ SƠ CÁ NHÂN & QUẢN LÝ NGƯỜI DÙNG (chỉ quản trị viên)
+    # ========================================================
+
+    path('profile/', views.profile_view, name='profile'),
+
+    # Xác thực email và quên mật khẩu
+    path('verify-email/sent/', views.verify_email_sent, name='verify_email_sent'),
+    path('verify-email/resend/', views.resend_verification_email, name='resend_verification_email'),
+    path('verify-email/<uidb64>/<token>/', views.verify_email, name='verify_email'),
+    path('password-reset/', views.PasswordResetRequestView.as_view(), name='password_reset'),
+    path('password-reset/sent/', auth_views.PasswordResetDoneView.as_view(template_name='planner/password_reset_done.html'), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='planner/password_reset_complete.html'), name='password_reset_complete'),
+    path('manage/users/', views.user_admin_list, name='user_admin_list'),
+    path('manage/users/<int:user_id>/toggle-active/', views.user_admin_toggle_active, name='user_admin_toggle_active'),
+    path('manage/users/<int:user_id>/toggle-staff/', views.user_admin_toggle_staff, name='user_admin_toggle_staff'),
 ]
 

@@ -12,7 +12,7 @@
             <div>
                 <span class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    {% if insights.is_ai_generated %}Phân tích bởi AI{% else %}Phân tích tự động (chưa cấu hình OPENAI_API_KEY){% endif %}
+                    {% if insights.is_ai_generated %}Phân tích bởi AI ({{ insights.ai_provider }}){% elif insights.ai_error %}Không kết nối được AI ({{ insights.ai_provider }}), đang dùng phân tích tự động{% else %}Phân tích tự động (chưa cấu hình AI){% endif %}
                 </span>
                 <h1 class="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight">Trợ lý AI & cảnh báo trễ hạn</h1>
                 <p class="mt-1 text-sm text-white/75">Tóm tắt ngày, phân bổ thời gian và điểm rủi ro cho từng nhiệm vụ.</p>

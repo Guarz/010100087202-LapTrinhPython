@@ -1,6 +1,5 @@
 # planner/ai_assistant.py
 import json
-import os
 from datetime import timedelta
 
 from django.conf import settings
@@ -87,23 +86,48 @@ def _fallback_insights(ctx):
     }
 
 
-def analyze_schedule_with_ai(user, now=None):
-    """
-    1. Tổng hợp: task + điểm rủi ro, lịch hôm nay, Pomodoro 7 ngày.
-    2. Có OPENAI_API_KEY: gửi ngữ cảnh cho OpenAI để tóm tắt ngày.
-    3. Không có key hoặc lỗi: trả về phân tích dự phòng (không làm hỏng trang).
-    """
-    ctx = build_context(user, now)
-    fallback = _fallback_insights(ctx)
+GEMINI_OPENAI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/'
 
-    api_key = os.getenv('OPENAI_API_KEY')
-    if not api_key:
-        return fallback
+SYSTEM_PROMPT = (
+    'Bạn là cố vấn lập kế hoạch học tập cho sinh viên Việt Nam. '
+    'Trả lời bằng tiếng Việt, ngắn gọn, cụ thể theo giờ và tên nhiệm vụ. '
+    'Chỉ dựa trên dữ liệu được cung cấp, không bịa thêm nhiệm vụ. '
+    'Chỉ trả về một đối tượng JSON thuần, không markdown.'
+)
 
+
+def get_ai_provider():
+    """Chọn nhà cung cấp AI từ cấu hình; None nếu chưa cấu hình."""
+    if settings.AI_BASE_URL:
+        return {
+            'name': 'Ollama/tùy chỉnh',
+            'base_url': settings.AI_BASE_URL,
+            # Ollama không kiểm tra key nhưng SDK openai bắt buộc có giá trị
+            'api_key': settings.AI_API_KEY or 'ollama',
+            'model': settings.AI_MODEL or 'qwen2.5:7b',
+        }
+    if settings.GEMINI_API_KEY:
+        return {
+            'name': 'Gemini',
+            'base_url': GEMINI_OPENAI_BASE_URL,
+            'api_key': settings.GEMINI_API_KEY,
+            'model': settings.AI_MODEL or 'gemini-flash-lite-latest',
+        }
+    if settings.OPENAI_API_KEY:
+        return {
+            'name': 'OpenAI',
+            'base_url': None,
+            'api_key': settings.OPENAI_API_KEY,
+            'model': settings.AI_MODEL or 'gpt-4o-mini',
+        }
+    return None
+
+
+def _build_prompt(ctx):
     tasks_data = [
         {
             'title': t.title,
-            'subject': t.subject_name or 'Chung',
+            'subject': t.subject_name or (t.course.name if t.course_id else 'Chung'),
             'deadline': timezone.localtime(t.deadline).strftime('%H:%M %d/%m/%Y'),
             'remaining_minutes': r.remaining_minutes,
             'risk_score': r.score,
@@ -119,35 +143,71 @@ def analyze_schedule_with_ai(user, now=None):
         }
         for b in ctx['today_blocks']
     ]
+    return (
+        f"Bây giờ là {timezone.localtime(ctx['now']):%H:%M %d/%m/%Y}. Phân tích dữ liệu học tập hôm nay.\n"
+        f'- Nhiệm vụ kèm điểm rủi ro trễ hạn (0-100): {json.dumps(tasks_data, ensure_ascii=False)}\n'
+        f'- Lịch hôm nay: {json.dumps(blocks_data, ensure_ascii=False)}\n'
+        f"- Pomodoro 7 ngày: {ctx['pomo_count']} phiên, {ctx['pomo_minutes']} phút.\n\n"
+        'Trả về JSON đúng 3 khóa: {"daily_summary": "tóm tắt việc cần làm hôm nay và phân bổ thời gian '
+        'cụ thể theo khung giờ", "risk_warnings": ["1-3 cảnh báo cụ thể, nêu tên nhiệm vụ và lý do"], '
+        '"habit_advice": "1 lời khuyên thực tế về thói quen học dựa trên số liệu Pomodoro"}'
+    )
+
+
+def _parse_json(text):
+    """Model nhỏ (Ollama) đôi khi bọc JSON trong ```json ... ```; bóc ra trước khi parse."""
+    text = (text or '').strip()
+    if text.startswith('```'):
+        text = text.split('\n', 1)[-1].rsplit('```', 1)[0]
+    start, end = text.find('{'), text.rfind('}')
+    return json.loads(text[start:end + 1] if start != -1 else text)
+
+
+def analyze_schedule_with_ai(user, now=None):
+    """
+    1. Tổng hợp: task + điểm rủi ro, lịch hôm nay, Pomodoro 7 ngày.
+    2. Có cấu hình AI (Ollama / Gemini / OpenAI): gửi ngữ cảnh qua API chuẩn
+       OpenAI, yêu cầu trả JSON để tóm tắt ngày.
+    3. Chưa cấu hình, máy chủ AI tắt (VD Colab hết phiên) hoặc lỗi: trả về
+       phân tích dự phòng, trang vẫn hoạt động.
+    """
+    ctx = build_context(user, now)
+    fallback = _fallback_insights(ctx)
+
+    provider = get_ai_provider()
+    if provider is None:
+        return fallback
 
     try:
         from openai import OpenAI
-        client = OpenAI(api_key=api_key)
-        prompt = (
-            'Phân tích dữ liệu học tập của sinh viên hôm nay.\n'
-            f'- Nhiệm vụ kèm điểm rủi ro trễ hạn (0-100): {json.dumps(tasks_data, ensure_ascii=False)}\n'
-            f'- Lịch hôm nay: {json.dumps(blocks_data, ensure_ascii=False)}\n'
-            f"- Pomodoro 7 ngày: {ctx['pomo_count']} phiên, {ctx['pomo_minutes']} phút.\n\n"
-            'Trả về JSON: {"daily_summary": "tóm tắt ngày + phân bổ thời gian cụ thể theo giờ", '
-            '"risk_warnings": ["1-3 cảnh báo cụ thể kèm tên nhiệm vụ"], '
-            '"habit_advice": "1 lời khuyên thực tế"}'
+
+        client = OpenAI(
+            api_key=provider['api_key'],
+            base_url=provider['base_url'],
+            timeout=settings.AI_TIMEOUT_SECONDS,
+            max_retries=2,  # Gemini đôi khi trả 503 khi quá tải
         )
         response = client.chat.completions.create(
-            model=settings.OPENAI_MODEL,
+            model=provider['model'],
             messages=[
-                {'role': 'system', 'content': 'Bạn là cố vấn lập kế hoạch học tập. Trả lời bằng tiếng Việt, JSON thuần.'},
-                {'role': 'user', 'content': prompt},
+                {'role': 'system', 'content': SYSTEM_PROMPT},
+                {'role': 'user', 'content': _build_prompt(ctx)},
             ],
             response_format={'type': 'json_object'},
             temperature=0.5,
         )
-        result = json.loads(response.choices[0].message.content)
+        result = _parse_json(response.choices[0].message.content)
+        warnings = result.get('risk_warnings') or []
+        if isinstance(warnings, str):
+            warnings = [warnings]
         return {
             'daily_summary': result.get('daily_summary') or fallback['daily_summary'],
-            'risk_warnings': result.get('risk_warnings') or fallback['risk_warnings'],
+            'risk_warnings': warnings[:3] or fallback['risk_warnings'],
             'habit_advice': result.get('habit_advice') or fallback['habit_advice'],
             'is_ai_generated': True,
+            'ai_provider': f"{provider['name']} · {provider['model']}",
         }
     except Exception as exc:  # noqa: BLE001 - AI chỉ là tính năng hỗ trợ
         fallback['ai_error'] = str(exc)
+        fallback['ai_provider'] = f"{provider['name']} · {provider['model']}"
         return fallback

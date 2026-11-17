@@ -31,6 +31,25 @@ def validate_study_material_size(uploaded_file):
 # GIỮ NGUYÊN - KHÔNG THUỘC PHẠM VI POMODORO
 # ============================================================
 
+INVITE_STATE_FIELDS = ('invite_sequence', 'invite_hash')
+
+
+class InviteStateMixin:
+    """
+    invite_sequence / invite_hash chỉ được cập nhật bằng queryset.update()
+    trong planner/calendar_invites.py. save() thông thường của form/view bỏ qua
+    hai trường này để object cũ trong bộ nhớ không ghi đè giá trị mới hơn.
+    """
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding and kwargs.get('update_fields') is None and not kwargs.get('force_insert'):
+            kwargs['update_fields'] = [
+                field.name for field in self._meta.concrete_fields
+                if not field.primary_key and field.name not in INVITE_STATE_FIELDS
+            ]
+        super().save(*args, **kwargs)
+
+
 class UserProfile(models.Model):
 
     user = models.OneToOneField(
@@ -57,6 +76,17 @@ class UserProfile(models.Model):
         unique=True,
         editable=False,
     )
+
+    # Xác thực email. Mặc định True để tài khoản cũ, tài khoản do
+    # quản trị viên/seed tạo vẫn đăng nhập được; đăng ký mới đặt False.
+    email_verified = models.BooleanField(default=True)
+
+    # Email mới đang chờ xác nhận (đổi email ở trang Hồ sơ).
+    pending_email = models.EmailField(blank=True, default='')
+
+    # Gửi lời mời lịch (iCalendar) qua email khi tạo/sửa/xóa deadline
+    # và phiên học đã xác nhận.
+    calendar_invites_enabled = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Hồ sơ của {self.user.username}"
@@ -135,7 +165,7 @@ class Course(models.Model):
 # GIỮ NGUYÊN - KHÔNG THUỘC PHẠM VI CHỈNH SỬA
 # ============================================================
 
-class Task(models.Model):
+class Task(InviteStateMixin, models.Model):
 
     PRIORITY_CHOICES = [
         (1, 'Cao'),
@@ -210,6 +240,11 @@ class Task(models.Model):
         editable=False,
     )
 
+    # Lời mời lịch qua email: SEQUENCE đã gửi gần nhất (None = chưa gửi)
+    # và dấu vân tay nội dung để chỉ gửi lại khi thông tin thay đổi.
+    invite_sequence = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    invite_hash = models.CharField(max_length=64, blank=True, default='', editable=False)
+
     created_at = models.DateTimeField(
         auto_now_add=True
     )
@@ -223,7 +258,7 @@ class Task(models.Model):
 # GIỮ NGUYÊN - KHÔNG THUỘC PHẠM VI POMODORO
 # ============================================================
 
-class ScheduleBlock(models.Model):
+class ScheduleBlock(InviteStateMixin, models.Model):
 
     STATUS_CHOICES = [
         ('suggested', 'Được đề xuất'),
@@ -257,6 +292,11 @@ class ScheduleBlock(models.Model):
         choices=STATUS_CHOICES,
         default='suggested'
     )
+
+    # Lời mời lịch qua email: SEQUENCE đã gửi gần nhất (None = chưa gửi)
+    # và dấu vân tay nội dung để chỉ gửi lại khi thông tin thay đổi.
+    invite_sequence = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    invite_hash = models.CharField(max_length=64, blank=True, default='', editable=False)
 
     def __str__(self):
         return (

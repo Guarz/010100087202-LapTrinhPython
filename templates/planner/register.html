@@ -7,19 +7,19 @@
 <div class="mx-auto max-w-sm space-y-6">
     <div>
         <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Tạo tài khoản</h1>
-        <p class="mt-1 text-sm text-slate-500">Bắt đầu lập lịch học thông minh trong 1 phút.</p>
+        <p class="mt-1 text-sm text-slate-500">Chúng tôi sẽ gửi link xác thực tới email của bạn.</p>
     </div>
 
-    <form method="POST" class="space-y-4">
+    <form method="POST" class="space-y-4" novalidate>
         {% csrf_token %}
         {% for field in form %}
             <div>
                 <label for="{{ field.id_for_label }}" class="label">{{ field.label }}</label>
                 {{ field }}
                 {% if field.errors %}
-                    <p class="mt-1 text-xs text-rose-600">{{ field.errors.0 }}</p>
-                {% elif field.help_text and field.name == 'password1' %}
-                    <details class="mt-1 text-[11px] text-slate-500"><summary class="cursor-pointer">Yêu cầu mật khẩu</summary>{{ field.help_text }}</details>
+                    {% for error in field.errors %}<p class="mt-1 text-xs text-rose-600" role="alert">{{ error }}</p>{% endfor %}
+                {% elif field.help_text %}
+                    <p class="mt-1 text-xs text-slate-500">{{ field.help_text }}</p>
                 {% endif %}
             </div>
         {% endfor %}
