@@ -1,19 +1,27 @@
 # Render Blueprint: Dashboard -> New -> Blueprint -> chọn repo này.
 #
-# Gói miễn phí: 1 web service (Django + FastAPI qua uvicorn).
+# Toàn bộ trên gói miễn phí:
+# - Web service: uvicorn (Django + FastAPI) + Celery worker & beat chạy nền
+#   trong cùng container (start.sh), vì worker riêng của Render phải trả phí.
+# - Key Value (Redis): broker + result backend cho Celery.
 # - Database: PostgreSQL trên Supabase (DATABASE_URL = Session pooler).
-# - Celery chạy eager trong web (không có REDIS_URL). Nhắc deadline định kỳ:
-#   dịch vụ cron ngoài (VD cron-job.org) gọi POST /internal/cron/reminders/
-#   mỗi 15 phút với header X-Cron-Secret = CRON_SECRET.
-# - Muốn chạy Celery worker + Redis thật (trả phí): xem khối chú thích cuối file.
+# Web free tự ngủ sau 15 phút không có request; dùng cron-job.org gọi
+# /api/v2/health mỗi 10-15 phút để giữ web (và Celery beat) luôn chạy.
 services:
+  - type: keyvalue
+    name: studyplanner-redis
+    plan: free
+    region: singapore
+    maxmemoryPolicy: noeviction   # hàng đợi job không được tự xóa
+    ipAllowList: []               # chỉ cho dịch vụ nội bộ Render truy cập
+
   - type: web
     name: ai-study-planner
     runtime: python
     plan: free
     region: singapore
     buildCommand: bash build.sh
-    startCommand: uvicorn core.asgi:application --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips '*'
+    startCommand: bash start.sh
     healthCheckPath: /api/v2/health
     envVars:
       - key: PYTHON_VERSION
@@ -26,7 +34,12 @@ services:
         value: ".onrender.com"
       - key: DATABASE_URL          # Supabase Session pooler
         sync: false
-      - key: CRON_SECRET
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: studyplanner-redis
+          property: connectionString
+      - key: CRON_SECRET           # cho endpoint dự phòng /internal/cron/reminders/
         generateValue: true
       - key: GEMINI_API_KEY
         sync: false
@@ -38,17 +51,3 @@ services:
         sync: false
       - key: MAIL_FROM_NAME
         value: StudyPlanner
-
-# --- Tùy chọn trả phí: Celery worker + Redis (Render Key Value) ---
-#  - type: keyvalue
-#    name: studyplanner-redis
-#    plan: free
-#    ipAllowList: []
-#  - type: worker
-#    name: ai-study-planner-worker
-#    runtime: python
-#    plan: starter
-#    region: singapore
-#    buildCommand: pip install -r requirements.txt
-#    startCommand: celery -A core worker -B -l info
-#    envVars: (giống web + REDIS_URL fromService studyplanner-redis; thêm REDIS_URL cho web)

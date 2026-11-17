@@ -427,14 +427,24 @@ python manage.py test
 
 ## Triển khai
 
-### Render (khuyến nghị)
+### Render (khuyến nghị, toàn bộ gói miễn phí)
+
+`render.yaml` tạo 2 dịch vụ:
+
+| Dịch vụ | Vai trò |
+|---|---|
+| **Key Value** `studyplanner-redis` (Redis, free) | Broker + result backend cho Celery |
+| **Web** `ai-study-planner` (free) | `start.sh`: Celery **worker + beat** chạy nền + uvicorn (Django + FastAPI) trong cùng container, vì worker riêng của Render phải trả phí |
+
+Database dùng PostgreSQL trên **Supabase** (Session pooler, IPv4).
 
 1. Đẩy mã lên GitHub.
-2. Render Dashboard → **New → Blueprint** → chọn repo. `render.yaml` tạo: web service (uvicorn chạy Django + FastAPI), PostgreSQL, Redis và worker Celery.
-3. Điền `GEMINI_API_KEY` hoặc `AI_BASE_URL` (tùy chọn), `BREVO_API_KEY`, `DEFAULT_FROM_EMAIL`. `SECRET_KEY` được sinh tự động, `DEBUG=false`.
-4. Sau khi deploy: mở Shell của web service và chạy `python manage.py seed_demo_data --username demo --create-user --staff` để có dữ liệu demo và một tài khoản quản trị viên.
+2. Render Dashboard → **New → Blueprint** → chọn repo.
+3. Điền biến bí mật: `DATABASE_URL` (URL Session pooler của Supabase), `GEMINI_API_KEY`, `BREVO_API_KEY`, `MAIL_FROM` (sender đã xác minh trên Brevo). `SECRET_KEY`, `CRON_SECRET` được sinh tự động; `REDIS_URL` tự lấy từ Key Value.
+4. Web free ngủ sau 15 phút không có request (Celery beat cũng dừng theo). Tạo job trên https://cron-job.org gọi `GET https://<app>.onrender.com/api/v2/health` mỗi 10 phút để giữ web và Celery luôn chạy.
+5. Log của web service hiện `Celery worker + beat started` và mỗi 15 phút có job `planner.tasks.send_deadline_reminders_task`.
 
-Gói free của Render không có background worker: xóa service worker trong `render.yaml` và tạo **Cron Job** chạy `python manage.py send_deadline_reminders` mỗi 15 phút.
+Dự phòng khi không có Redis: `POST /internal/cron/reminders/` với header `X-Cron-Secret: <CRON_SECRET>` chạy lệnh nhắc deadline trực tiếp.
 
 ### Railway / Fly.io
 
